@@ -1,0 +1,35 @@
+name: x86_64 release builds
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: x86_64, sys: MINGW64 }
+          - { name: ucrt-x86_64, sys: UCRT64 }
+          - { name: clang-x86_64, sys: CLANG64 }
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.sys }}
+          update: true
+          install: >-
+            git
+            mingw-w64-${{ matrix.name }}-toolchain
+            mingw-w64-${{ matrix.name }}-cmake
+            mingw-w64-${{ matrix.name }}-zlib
+            mingw-w64-${{ matrix.name }}-brotli
+            mingw-w64-${{ matrix.name }}-qt6
+
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -S .
+          cd build
+          cmake --build .
