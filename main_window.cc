@@ -85,8 +85,8 @@ void MainWindow::onMyDecomposeDataReceived(int scene, const QByteArray &json)
         return;
     }
 
-    const int code = j.at("code");
-    const std::string message = j.at("message");
+    const int code = j.at("code").get<int>();
+    const std::string message = j.at("message").get<std::string>();
     if (code != 0) {
         statusBar()->showMessage(u"code: %1, message: %2"_s.arg(code).arg(message), 3000);
         return;

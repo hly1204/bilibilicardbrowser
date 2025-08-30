@@ -20,22 +20,11 @@ void from_json(const nlohmann::json &j, QList<Tp> &list)
         return;
     }
 
+    list.reserve(std::size(j));
     for (auto &&item : j) {
         auto &&last_item = list.emplace_back();
         item.get_to(last_item);
     }
-}
-
-template <typename Tp>
-void from_json(const nlohmann::json &j, std::optional<Tp> &opt)
-{
-    opt.reset();
-    if (j.is_null()) {
-        return;
-    }
-
-    auto &&v = opt.emplace();
-    j.get_to(v);
 }
 
 void from_json(const nlohmann::json &j, QString &s)
@@ -48,7 +37,7 @@ void from_json(const nlohmann::json &j, QUrl &u)
 }
 void from_json(const nlohmann::json &j, QDateTime &d)
 {
-    d = QDateTime::fromSecsSinceEpoch(j);
+    d = QDateTime::fromSecsSinceEpoch(j.get<qint64>());
 }
 
 void from_json(const nlohmann::json &j, AssetBagData::CardIdListItem &item)
@@ -65,7 +54,11 @@ void from_json(const nlohmann::json &j, AssetBagData::ListItem::CardItem &item)
     j.at("card_name").get_to(item.card_name);
     j.at("card_img").get_to(item.card_img);
     j.at("card_type").get_to(item.card_type);
-    j.at("card_id_list").get_to(item.card_id_list);
+    item.card_id_list.reset();
+    auto &&card_id_list = j.at("card_id_list");
+    if (card_id_list.is_array()) {
+        card_id_list.get_to(item.card_id_list.emplace());
+    }
     j.at("total_cnt").get_to(item.total_cnt);
     j.at("total_cnt_show").get_to(item.total_cnt_show);
     j.at("holding_rate").get_to(item.holding_rate);
@@ -77,7 +70,11 @@ void from_json(const nlohmann::json &j, AssetBagData::ListItem &item)
 {
     j.at("item_type").get_to(item.item_type);
     j.at("item_scarcity").get_to(item.item_scarcity);
-    j.at("card_item").get_to(item.card_item);
+    item.card_item.reset();
+    auto &&card_item = j.at("card_item");
+    if (!card_item.is_null()) {
+        card_item.get_to(item.card_item.emplace());
+    }
 }
 
 void from_json(const nlohmann::json &j, AssetBagData::CollectListItem::CardItem::CardTypeInfo &info)
@@ -90,8 +87,14 @@ void from_json(const nlohmann::json &j, AssetBagData::CollectListItem::CardItem:
 
 void from_json(const nlohmann::json &j, AssetBagData::CollectListItem::CardItem &item)
 {
-    j.at("card_type_info").get_to(item.card_type_info);
-    j.at("card_asset_info").get_to(item.card_asset_info);
+    auto &&card_type_info = j.at("card_type_info");
+    if (!card_type_info.is_null()) {
+        card_type_info.get_to(item.card_type_info.emplace());
+    }
+    auto &&card_asset_info = j.at("card_asset_info");
+    if (!card_asset_info.is_null()) {
+        card_asset_info.get_to(item.card_asset_info.emplace());
+    }
 }
 
 void from_json(const nlohmann::json &j, AssetBagData::CollectListItem &item)
@@ -108,7 +111,11 @@ void from_json(const nlohmann::json &j, AssetBagData::CollectListItem &item)
     j.at("require_item_amount").get_to(item.require_item_amount);
     j.at("has_redeemed_cnt").get_to(item.has_redeemed_cnt);
     j.at("effective_forever").get_to(item.effective_forever);
-    j.at("card_item").get_to(item.card_item);
+    item.card_item.reset();
+    auto &&card_item = j.at("card_item");
+    if (!card_item.is_null()) {
+        card_item.get_to(item.card_item.emplace());
+    }
 }
 
 void from_json(const nlohmann::json &j, AssetBagData::LotterySimpleListItem &item)
@@ -121,9 +128,21 @@ void from_json(const nlohmann::json &j, AssetBagData &data)
 {
     j.at("total_item_cnt").get_to(data.total_item_cnt);
     j.at("owned_item_cnt").get_to(data.owned_item_cnt);
-    j.at("item_list").get_to(data.item_list);
-    j.at("collect_list").get_to(data.collect_list);
-    j.at("lottery_simple_list").get_to(data.lottery_simple_list);
+    data.item_list.reset();
+    auto &&item_list = j.at("item_list");
+    if (item_list.is_array()) {
+        item_list.get_to(data.item_list.emplace());
+    }
+    data.collect_list.reset();
+    auto &&collect_list = j.at("collect_list");
+    if (collect_list.is_array()) {
+        collect_list.get_to(data.collect_list.emplace());
+    }
+    data.lottery_simple_list.reset();
+    auto &&lottery_simple_list = j.at("lottery_simple_list");
+    if (lottery_simple_list.is_array()) {
+        lottery_simple_list.get_to(data.lottery_simple_list.emplace());
+    }
 }
 
 AssetBagData AssetBagData::fromJson(const QByteArray &json, bool *ok)
@@ -140,8 +159,8 @@ AssetBagData AssetBagData::fromJson(const QByteArray &json, bool *ok)
             break;
         }
 
-        const int code = j.at("code");
-        const std::string message = j.at("message");
+        const int code = j.at("code").get<int>();
+        const std::string message = j.at("message").get<std::string>();
         if (code != 0) {
             qWarning() << "code:" << code << "message:" << message;
             break;
