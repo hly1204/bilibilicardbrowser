@@ -231,62 +231,70 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
     item_cnt_label_->adjustSize();
 
     // 可以抽到的卡片
-    for (auto &&item : data.item_list.value_or({})) {
-        if (!item.card_item.has_value()) {
-            continue;
-        }
-        QTreeWidgetItem *top_item = new QTreeWidgetItem;
-        tree_widget_->addTopLevelItem(top_item);
-        tree_widget_->setItemWidget(top_item, 0, new QLabel(item.scarcity()));
-        tree_widget_->setItemWidget(top_item, 1, new QLabel(item.card_item->card_name));
-        tree_widget_->setItemWidget(top_item, 2,
-                                    new QLabel(QString::number(item.card_item->total_cnt)));
-        tree_widget_->setItemWidget(
-                top_item, 3,
-                new QLabel(QString::number(item.card_item->holding_rate / 100.0, 'g', 2) % '%'));
-        tree_widget_->setItemWidget(
-                top_item, 4,
-                new QLabel(item.card_item->is_limited_card != 0 ? u"限量"_s : u"无限制"_s));
-
-        for (auto &&card : item.card_item->card_id_list.value_or({})) {
-            QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
-            tree_widget_->setItemWidget(sub_item, 1, new QLabel(item.card_item->card_name));
-            tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
+    if (data.item_list.has_value()) {
+        for (auto &&item : *data.item_list) {
+            if (!item.card_item.has_value()) {
+                continue;
+            }
+            QTreeWidgetItem *top_item = new QTreeWidgetItem;
+            tree_widget_->addTopLevelItem(top_item);
+            tree_widget_->setItemWidget(top_item, 0, new QLabel(item.scarcity()));
+            tree_widget_->setItemWidget(top_item, 1, new QLabel(item.card_item->card_name));
+            tree_widget_->setItemWidget(top_item, 2,
+                                        new QLabel(QString::number(item.card_item->total_cnt)));
             tree_widget_->setItemWidget(
-                    sub_item, 5,
-                    new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
+                    top_item, 3,
+                    new QLabel(QString::number(item.card_item->holding_rate / 100.0, 'g', 2)
+                               % '%'));
+            tree_widget_->setItemWidget(
+                    top_item, 4,
+                    new QLabel(item.card_item->is_limited_card != 0 ? u"限量"_s : u"无限制"_s));
+
+            if (item.card_item->card_id_list.has_value()) {
+                for (auto &&card : *item.card_item->card_id_list) {
+                    QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
+                    tree_widget_->setItemWidget(sub_item, 1, new QLabel(item.card_item->card_name));
+                    tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
+                    tree_widget_->setItemWidget(
+                            sub_item, 5,
+                            new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
+                }
+                top_item->setExpanded(true);
+            }
         }
-        top_item->setExpanded(true);
     }
 
     // 典藏卡
-    for (auto &&collect : data.collect_list.value_or({})) {
-        if (!collect.card_item.has_value() || !collect.card_item->card_type_info.has_value()) {
-            continue;
-        }
-        QTreeWidgetItem *top_item = new QTreeWidgetItem;
-        tree_widget_->addTopLevelItem(top_item);
-        tree_widget_->setItemWidget(top_item, 0, new QLabel(u"典藏卡"_s));
-        tree_widget_->setItemWidget(top_item, 1,
-                                    new QLabel(collect.card_item->card_type_info->name));
-        tree_widget_->setItemWidget(
-                top_item, 2,
-                new QLabel(
-                        QString::number(collect.card_item->card_asset_info->card_item->total_cnt)));
-        tree_widget_->setItemWidget(top_item, 3, new QLabel(u"/"_s));
-        tree_widget_->setItemWidget(top_item, 4, new QLabel(u"/"_s));
-
-        for (auto &&card :
-             collect.card_item->card_asset_info->card_item->card_id_list.value_or({})) {
-            QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
-            tree_widget_->setItemWidget(sub_item, 1,
+    if (data.collect_list.has_value()) {
+        for (auto &&collect : *data.collect_list) {
+            if (!collect.card_item.has_value() || !collect.card_item->card_type_info.has_value()) {
+                continue;
+            }
+            QTreeWidgetItem *top_item = new QTreeWidgetItem;
+            tree_widget_->addTopLevelItem(top_item);
+            tree_widget_->setItemWidget(top_item, 0, new QLabel(u"典藏卡"_s));
+            tree_widget_->setItemWidget(top_item, 1,
                                         new QLabel(collect.card_item->card_type_info->name));
-            tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
             tree_widget_->setItemWidget(
-                    sub_item, 5,
-                    new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
+                    top_item, 2,
+                    new QLabel(QString::number(
+                            collect.card_item->card_asset_info->card_item->total_cnt)));
+            tree_widget_->setItemWidget(top_item, 3, new QLabel(u"/"_s));
+            tree_widget_->setItemWidget(top_item, 4, new QLabel(u"/"_s));
+
+            if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
+                for (auto &&card : *collect.card_item->card_asset_info->card_item->card_id_list) {
+                    QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
+                    tree_widget_->setItemWidget(
+                            sub_item, 1, new QLabel(collect.card_item->card_type_info->name));
+                    tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
+                    tree_widget_->setItemWidget(
+                            sub_item, 5,
+                            new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
+                }
+                top_item->setExpanded(true);
+            }
         }
-        top_item->setExpanded(true);
     }
 
     tree_widget_->resizeColumnToContents(1);
