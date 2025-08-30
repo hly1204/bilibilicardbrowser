@@ -27,7 +27,7 @@ public:
 
 signals:
     void refreshRequested();
-    void detailRequested(int act_id);
+    void detailRequested(int act_id, const QString &act_name);
 
 public slots:
     void clearMyDecomposeData();

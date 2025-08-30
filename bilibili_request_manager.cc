@@ -56,7 +56,10 @@ void BilibiliRequestManager::setCookie(const QString &cookie)
         if (kv[0].trimmed() == "bili_jct") {
             csrf_ = QString::fromLatin1(kv[1].trimmed());
             ok = true;
-            break;
+        }
+
+        if (kv[0].trimmed() == "buvid3") {
+            buvid_ = QString::fromLatin1(kv[1].trimmed());
         }
     }
 
@@ -107,5 +110,76 @@ void BilibiliRequestManager::getMyDecompose(int scene)
         } else {
             emit myDecomposeDataReceived(scene, data);
         }
+    });
+}
+
+void BilibiliRequestManager::getAssetBag(int act_id, const QString &act_name, int lottery_id,
+                                         int ruid)
+{
+    QNetworkRequest request =
+            factory_.createRequest(u"/x/vas/dlc_act/asset_bag"_s,
+                                   QUrlQuery{
+                                           { u"act_id"_s, QString::number(act_id) },
+                                           { u"buvid"_s, buvid_ },
+                                           { u"csrf"_s, csrf_ },
+                                           { u"lottery_id"_s, QString::number(lottery_id) },
+                                           { u"ruid"_s, QString::number(ruid) },
+                                   });
+    QNetworkReply *reply = manager_->get(request);
+    connect(reply, &QNetworkReply::errorOccurred, this, [this](QNetworkReply::NetworkError error) {
+        emit errorOccurred(qobject_cast<QNetworkReply *>(sender()), error);
+    });
+    connect(reply, &QNetworkReply::finished, this, [this, act_id, act_name, lottery_id, ruid]() {
+        QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> reply(
+                qobject_cast<QNetworkReply *>(sender()));
+        Q_ASSERT(reply != nullptr);
+
+        if (reply->error() != QNetworkReply::NoError) {
+            return;
+        }
+
+        const QByteArray data = reply->readAll();
+        const QHttpHeaders headers = reply->headers();
+
+        if (headers.contains(QHttpHeaders::WellKnownHeader::ContentEncoding)) {
+            bool ok;
+            const QByteArray uncompressed_data = uncompress(
+                    data, headers.value(QHttpHeaders::WellKnownHeader::ContentEncoding), &ok);
+            if (ok) {
+                emit assetBagDataReceived(act_id, act_name, lottery_id, ruid, uncompressed_data);
+            } else {
+                qWarning() << "Unexpected Content-Encoding:"
+                           << headers.value(QHttpHeaders::WellKnownHeader::ContentEncoding);
+            }
+        } else {
+            emit assetBagDataReceived(act_id, act_name, lottery_id, ruid, data);
+        }
+    });
+}
+
+void BilibiliRequestManager::getImage(long long card_type_id, const QUrl &url)
+{
+    QNetworkRequest request(url);
+    {
+        // 不需要 cookie
+        QHttpHeaders headers;
+        // 传输图片不接受压缩后的数据，因为主流图片格式本身已经是压缩后的结果
+        headers.append(QHttpHeaders::WellKnownHeader::UserAgent, user_agent_);
+        request.setHeaders(headers);
+    }
+    QNetworkReply *reply = manager_->get(request);
+    connect(reply, &QNetworkReply::errorOccurred, this, [this](QNetworkReply::NetworkError error) {
+        emit errorOccurred(qobject_cast<QNetworkReply *>(sender()), error);
+    });
+    connect(reply, &QNetworkReply::finished, this, [this, card_type_id, url]() {
+        QScopedPointer<QNetworkReply, QScopedPointerDeleteLater> reply(
+                qobject_cast<QNetworkReply *>(sender()));
+        Q_ASSERT(reply != nullptr);
+
+        if (reply->error() != QNetworkReply::NoError) {
+            return;
+        }
+
+        emit imageDataReceived(card_type_id, url, reply->readAll());
     });
 }

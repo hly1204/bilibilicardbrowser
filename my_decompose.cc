@@ -19,6 +19,7 @@ MyDecompose::MyDecompose(QWidget *parent, Qt::WindowFlags f)
       table_widget_(new QTableWidget(this)),
       refresh_button_(new QPushButton(u"刷新"_s, this))
 {
+    refresh_button_->adjustSize();
     table_widget_->setColumnCount(5);
     table_widget_->setHorizontalHeaderLabels(QStringList{
             u"收藏集名称"_s,
@@ -42,7 +43,8 @@ void MyDecompose::setMyDecomposeData(int scene, const QList<MyDecomposeData> &da
     Q_ASSERT(scene == 1 || scene == 2);
 
     if (table_widget_->rowCount() == 0) {
-        table_widget_->setRowCount(std::size(data));
+        table_widget_->setRowCount(
+                std::size(data)); // NOLINT(cppcoreguidelines-narrowing-conversions)
         for (int i = 0; i < static_cast<int>(std::size(data)); ++i) {
             QLabel *act_name = new QLabel(
                     u"<a href=\"https://www.bilibili.com/h5/mall/digital-card/home?-Abrowser=live&act_id=%1&hybrid_set_header=2\">%2</a>"_s
@@ -56,7 +58,9 @@ void MyDecompose::setMyDecomposeData(int scene, const QList<MyDecomposeData> &da
                                    new QTableWidgetItem(QString::number(data[i].card_num)));
             QPushButton *detail_button = new QPushButton(u"详细"_s);
             connect(detail_button, &QPushButton::clicked, this,
-                    [this, act_id = data[i].act_id]() { emit detailRequested(act_id); });
+                    [this, act_id = data[i].act_id, act_name = data[i].act_name]() {
+                        emit detailRequested(act_id, act_name);
+                    });
             table_widget_->setCellWidget(i, 4, detail_button);
             map_[data[i].act_id] = i;
         }

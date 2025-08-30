@@ -71,6 +71,7 @@ target_sources(bilibilicardbrowser PRIVATE
     bilibili_request_manager.hh
     compress_helper.hh
     my_decompose.hh
+    asset_bag.hh
     main_window.hh
 )
 
@@ -79,6 +80,7 @@ target_sources(bilibilicardbrowser PRIVATE
     bilibili_request_manager.cc
     compress_helper.cc
     my_decompose.cc
+    asset_bag.cc
     main_window.cc
 )
 
@@ -102,7 +104,7 @@ qt_generate_deploy_app_script(
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
     DEPLOY_TOOL_OPTIONS
-        "--exclude-plugins qpdf,svg"
+        "--exclude-plugins qpdf,qsvg"
         "--translations en,zh_CN"
 )
 install(SCRIPT ${deploy_script})

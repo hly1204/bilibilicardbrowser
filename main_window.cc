@@ -1,9 +1,11 @@
 #include <QApplication>
 #include <QSplitter>
+#include <QTabWidget>
 #include <QStatusBar>
 #include <QPushButton>
 #include <QList>
 #include <QInputDialog>
+#include <QOverload>
 #include <QtLogging>
 #include <QDebug>
 
@@ -11,6 +13,7 @@
 
 #include "main_window.hh"
 #include "my_decompose.hh"
+#include "asset_bag.hh"
 
 using namespace Qt::Literals;
 
@@ -20,13 +23,17 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
       manager_(),
       splitter_(new QSplitter(Qt::Horizontal)),
       my_decompose_(new MyDecompose),
+      tab_widget_(new QTabWidget),
       set_cookie_button_(new QPushButton(u"设置 Cookie"_s))
 {
     setWindowTitle(u"我的小卡片 v%1 (Commit: %2, Date: %3)"_s.arg(qApp->applicationVersion())
                            .arg(GIT_COMMIT_HASH)
                            .arg(COMPILE_TIME));
 
+    tab_widget_->setTabsClosable(true);
+    connect(tab_widget_, &QTabWidget::tabCloseRequested, tab_widget_, &QTabWidget::removeTab);
     splitter_->addWidget(my_decompose_);
+    splitter_->addWidget(tab_widget_);
     setCentralWidget(splitter_);
 
     connect(set_cookie_button_, &QPushButton::clicked, this, &MainWindow::onSetCookieButtonClicked);
@@ -35,8 +42,12 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 1);
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 2);
     });
+    connect(my_decompose_, &MyDecompose::detailRequested, &manager_,
+            qOverload<int, const QString &>(&BilibiliRequestManager::getAssetBag));
     connect(&manager_, &BilibiliRequestManager::myDecomposeDataReceived, this,
             &MainWindow::onMyDecomposeDataReceived);
+    connect(&manager_, &BilibiliRequestManager::assetBagDataReceived, this,
+            &MainWindow::onAssetBagDataReceived);
 
     {
         QStatusBar *status_bar = statusBar();
@@ -74,8 +85,8 @@ void MainWindow::onMyDecomposeDataReceived(int scene, const QByteArray &json)
         return;
     }
 
-    const int code = j.at("code").get<int>();
-    const std::string message = j.at("message").get<std::string>();
+    const int code = j.at("code");
+    const std::string message = j.at("message");
     if (code != 0) {
         statusBar()->showMessage(u"code: %1, message: %2"_s.arg(code).arg(message), 3000);
         return;
@@ -90,7 +101,7 @@ void MainWindow::onMyDecomposeDataReceived(int scene, const QByteArray &json)
     }
 
     QList<MyDecomposeData> decompose_list;
-    decompose_list.reserve(std::size(list));
+    decompose_list.reserve(std::size(list)); // NOLINT(cppcoreguidelines-narrowing-conversions)
     for (auto &&a : list) {
         MyDecomposeData decompose_data = {
             QString::fromStdString(a.at("act_name").get<std::string>()),
@@ -100,4 +111,27 @@ void MainWindow::onMyDecomposeDataReceived(int scene, const QByteArray &json)
         decompose_list.emplace_back(std::move(decompose_data));
     }
     my_decompose_->setMyDecomposeData(scene, decompose_list);
+}
+
+void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name, int lottery_id,
+                                        int ruid, const QByteArray &json)
+{
+    bool ok;
+    const AssetBagData d = AssetBagData::fromJson(json, &ok);
+    if (!ok) {
+        statusBar()->showMessage(u"json 非法"_s, 3000);
+        return;
+    }
+
+    AssetBag *asset_bag = new AssetBag;
+    asset_bag->setInfo(act_id, act_name);
+    asset_bag->setAssetBagData(d);
+    tab_widget_->addTab(asset_bag, act_name);
+    tab_widget_->setCurrentWidget(asset_bag);
+
+    Q_UNUSED(act_id);
+    Q_UNUSED(act_name);
+    Q_UNUSED(lottery_id);
+    Q_UNUSED(ruid);
+    Q_UNUSED(json);
 }

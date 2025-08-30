@@ -10,6 +10,7 @@
 QT_BEGIN_NAMESPACE
 class QSplitter;
 class QPushButton;
+class QTabWidget;
 QT_END_NAMESPACE
 
 class MyDecompose;
@@ -25,12 +26,15 @@ public:
 private slots:
     void onSetCookieButtonClicked();
     void onMyDecomposeDataReceived(int scene, const QByteArray &json);
+    void onAssetBagDataReceived(int act_id, const QString &act_name, int lottery_id, int ruid,
+                                const QByteArray &json);
 
 private:
     QThread network_thread_;
     BilibiliRequestManager manager_;
     QSplitter *splitter_;
     MyDecompose *my_decompose_;
+    QTabWidget *tab_widget_;
     QPushButton *set_cookie_button_;
 };
 
