@@ -1,0 +1,63 @@
+name: x86_64 release builds
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: ucrt-x86_64, sys: UCRT64 }
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.sys }}
+          update: true
+          install: >-
+            git
+            mingw-w64-${{ matrix.name }}-toolchain
+            mingw-w64-${{ matrix.name }}-cmake
+            mingw-w64-${{ matrix.name }}-zlib
+            mingw-w64-${{ matrix.name }}-brotli
+            mingw-w64-${{ matrix.name }}-qt6
+
+      - name: Build
+        shell: msys2 {0}
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -S .
+          cd build
+          cmake --build .
+          cmake --install . --prefix $PWD/bilibilicardbrowser --strip
+          mkdir -p bilibilicardbrowser/src
+          cp -pv ../*.hh ../*.cc ../CMakeLists.txt ../LICENSE bilibilicardbrowser/src
+          ../scripts/copy_deps bilibilicardbrowser
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: bilibilicardbrowser-${{ matrix.name }}
+          path: ${{ github.workspace }}/build/bilibilicardbrowser
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          path: ./
+          merge-multiple: true
+
+      - name: Upload to Release
+        id: upload_to_release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "*.zip"

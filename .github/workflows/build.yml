@@ -1,4 +1,4 @@
-name: x86_64 release builds
+name: Build tests
 on: [push, pull_request]
 
 jobs:
@@ -27,9 +27,16 @@ jobs:
             mingw-w64-${{ matrix.name }}-brotli
             mingw-w64-${{ matrix.name }}-qt6
 
-      - name: Build
+      - name: Debug Build
         shell: msys2 {0}
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -S .
-          cd build
+          cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug -S .
+          cd build-debug
+          cmake --build .
+      
+      - name: Release Build
+        shell: msys2 {0}
+        run: |
+          cmake -B build-release -DCMAKE_BUILD_TYPE=Release -S .
+          cd build-release
           cmake --build .
