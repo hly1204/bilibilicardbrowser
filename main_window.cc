@@ -4,6 +4,7 @@
 #include <QTabWidget>
 #include <QStatusBar>
 #include <QPushButton>
+#include <QCheckBox>
 #include <QList>
 #include <QInputDialog>
 #include <QOverload>
@@ -26,7 +27,8 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
       splitter_(new QSplitter(Qt::Horizontal)),
       my_decompose_(new MyDecompose),
       tab_widget_(new QTabWidget),
-      set_cookie_button_(new QPushButton(u"设置 Cookie"_s))
+      set_cookie_button_(new QPushButton(u"设置 Cookie"_s)),
+      save_cookie_check_box_(new QCheckBox(u"将 Cookie 存储在本地"_s))
 {
     setWindowTitle(u"我的小卡片 v%1 (Commit: %2, Date: %3)"_s.arg(qApp->applicationVersion())
                            .arg(GIT_COMMIT_HASH)
@@ -61,12 +63,13 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     {
         QStatusBar *status_bar = statusBar();
         status_bar->addPermanentWidget(set_cookie_button_);
+        status_bar->addPermanentWidget(save_cookie_check_box_);
     }
-
-    loadSettings();
 
     manager_.moveToThread(&network_thread_);
     network_thread_.start();
+
+    loadSettings();
 }
 
 MainWindow::~MainWindow()
@@ -96,6 +99,18 @@ void MainWindow::loadSettings()
         splitter_->restoreState(settings_.value("splitter_size").toByteArray());
     }
     settings_.endGroup();
+
+    settings_.beginGroup("Network");
+    save_cookie_check_box_->setChecked(settings_.value("save_cookie", false).toBool());
+    if (settings_.contains("cookie")) {
+        const QString cookie = settings_.value("cookie").toString();
+        if (!cookie.isEmpty()) {
+            QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::setCookie, cookie);
+            QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 1);
+            QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 2);
+        }
+    }
+    settings_.endGroup();
 }
 
 void MainWindow::saveSettings()
@@ -113,12 +128,26 @@ void MainWindow::saveSettings()
     settings_.beginGroup("Splitter");
     settings_.setValue("splitter_size", splitter_->saveState());
     settings_.endGroup();
+
+    settings_.beginGroup("Network");
+    settings_.setValue("save_cookie", save_cookie_check_box_->isChecked());
+    if (save_cookie_check_box_->isChecked()) {
+        QString cookie;
+        QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::cookie,
+                                  Qt::BlockingQueuedConnection, qReturnArg(cookie));
+        settings_.setValue("cookie", cookie);
+    } else {
+        if (settings_.contains("cookie")) {
+            settings_.remove("cookie");
+        }
+    }
+    settings_.endGroup();
 }
 
 void MainWindow::onSetCookieButtonClicked()
 {
     bool ok;
-    const QString cookie = QInputDialog::getText(this, u"输入 Cookie"_s, "Cookie"_L1,
+    const QString cookie = QInputDialog::getText(this, u"输入 Cookie"_s, u"Cookie"_s,
                                                  QLineEdit::Normal, QString(), &ok);
 
     if (ok && !cookie.isEmpty()) {

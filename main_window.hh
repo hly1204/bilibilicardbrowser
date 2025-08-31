@@ -12,6 +12,7 @@
 QT_BEGIN_NAMESPACE
 class QSplitter;
 class QPushButton;
+class QCheckBox;
 class QTabWidget;
 QT_END_NAMESPACE
 
@@ -57,6 +58,7 @@ private:
     MyDecompose *my_decompose_;
     QTabWidget *tab_widget_;
     QPushButton *set_cookie_button_;
+    QCheckBox *save_cookie_check_box_;
     QMap<ActIdAndLotteryId, AssetBag *> map_;
 };
 

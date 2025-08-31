@@ -23,7 +23,7 @@ BilibiliRequestManager::BilibiliRequestManager(QObject *parent)
 {
     // 默认构造不会配置 cookie，使用默认的 UA
     QHttpHeaders headers;
-    headers.append(QHttpHeaders::WellKnownHeader::AcceptEncoding, "gzip, deflate, br"_L1);
+    headers.append(QHttpHeaders::WellKnownHeader::AcceptEncoding, "gzip, deflate, br");
     headers.append(QHttpHeaders::WellKnownHeader::UserAgent, user_agent_);
     factory_.setCommonHeaders(headers);
 
@@ -35,7 +35,7 @@ void BilibiliRequestManager::setUserAgent(const QString &user_agent)
     user_agent_ = user_agent;
 
     QHttpHeaders headers;
-    headers.append(QHttpHeaders::WellKnownHeader::AcceptEncoding, "gzip, deflate, br"_L1);
+    headers.append(QHttpHeaders::WellKnownHeader::AcceptEncoding, "gzip, deflate, br");
     headers.append(QHttpHeaders::WellKnownHeader::UserAgent, user_agent);
     headers.append(QHttpHeaders::WellKnownHeader::Cookie, cookie_);
     factory_.setCommonHeaders(headers);
@@ -68,7 +68,7 @@ void BilibiliRequestManager::setCookie(const QString &cookie)
     }
 
     QHttpHeaders headers;
-    headers.append(QHttpHeaders::WellKnownHeader::AcceptEncoding, "gzip, deflate, br"_L1);
+    headers.append(QHttpHeaders::WellKnownHeader::AcceptEncoding, "gzip, deflate, br");
     headers.append(QHttpHeaders::WellKnownHeader::UserAgent, user_agent_);
     headers.append(QHttpHeaders::WellKnownHeader::Cookie, cookie);
     factory_.setCommonHeaders(headers);
