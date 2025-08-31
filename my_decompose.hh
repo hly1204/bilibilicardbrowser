@@ -3,8 +3,7 @@
 
 #include <QWidget>
 #include <QList>
-
-#include <map>
+#include <QMap>
 
 QT_BEGIN_NAMESPACE
 class QTableWidget;
@@ -39,7 +38,7 @@ protected:
 private:
     QTableWidget *table_widget_;
     QPushButton *refresh_button_;
-    std::map<int, int> map_; // {act_id, row_id}
+    QMap<int, int> map_; // {act_id, row_id}
 };
 
 #endif

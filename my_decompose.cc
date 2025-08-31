@@ -8,7 +8,6 @@
 #include <QtAssert>
 
 #include <iterator>
-#include <utility>
 
 #include "my_decompose.hh"
 
@@ -66,15 +65,15 @@ void MyDecompose::setMyDecomposeData(int scene, const QList<MyDecomposeData> &da
         }
     } else {
         for (int i = 0; i < static_cast<int>(std::size(data)); ++i) {
-            auto iter = std::as_const(map_).find(data[i].act_id);
-            if (iter == std::cend(map_)) {
+            auto iter = map_.constFind(data[i].act_id);
+            if (iter == map_.constEnd()) {
                 qWarning() << "Unknown act_id:" << data[i].act_id;
                 continue;
             }
-            if (QTableWidgetItem *item = table_widget_->item(iter->second, scene == 1 ? 2 : 3)) {
+            if (QTableWidgetItem *item = table_widget_->item(iter.value(), scene == 1 ? 2 : 3)) {
                 item->setText(QString::number(data[i].card_num));
             } else {
-                table_widget_->setItem(iter->second, scene == 1 ? 2 : 3,
+                table_widget_->setItem(iter.value(), scene == 1 ? 2 : 3,
                                        new QTableWidgetItem(QString::number(data[i].card_num)));
             }
         }

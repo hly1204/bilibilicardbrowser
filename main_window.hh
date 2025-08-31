@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QThread>
 #include <QString>
+#include <QMap>
 
 #include "bilibili_request_manager.hh"
 
@@ -14,6 +15,7 @@ class QTabWidget;
 QT_END_NAMESPACE
 
 class MyDecompose;
+class AssetBag;
 
 class MainWindow : public QMainWindow
 {
@@ -29,6 +31,16 @@ private slots:
     void onAssetBagDataReceived(int act_id, const QString &act_name, int lottery_id, int ruid,
                                 const QByteArray &json);
 
+public:
+    struct ActIdAndLotteryId
+    {
+        int act_id;
+        int lottery_id;
+
+        explicit inline ActIdAndLotteryId(int act_id, int lottery_id);
+        friend inline bool operator<(const ActIdAndLotteryId &lhs, const ActIdAndLotteryId &rhs);
+    };
+
 private:
     QThread network_thread_;
     BilibiliRequestManager manager_;
@@ -36,6 +48,16 @@ private:
     MyDecompose *my_decompose_;
     QTabWidget *tab_widget_;
     QPushButton *set_cookie_button_;
+    QMap<ActIdAndLotteryId, AssetBag *> map_;
 };
+
+// clang-format off
+inline MainWindow::ActIdAndLotteryId::ActIdAndLotteryId(int act_id, int lottery_id)
+    : act_id(act_id), lottery_id(lottery_id) { }
+inline bool operator<(const MainWindow::ActIdAndLotteryId &lhs,
+                      const MainWindow::ActIdAndLotteryId &rhs)
+{ if (lhs.act_id == rhs.act_id) { return lhs.lottery_id < rhs.lottery_id; }
+  return lhs.act_id < rhs.act_id; }
+// clang-format on
 
 #endif

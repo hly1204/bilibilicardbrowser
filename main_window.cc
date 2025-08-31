@@ -31,7 +31,14 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
                            .arg(COMPILE_TIME));
 
     tab_widget_->setTabsClosable(true);
-    connect(tab_widget_, &QTabWidget::tabCloseRequested, tab_widget_, &QTabWidget::removeTab);
+    connect(tab_widget_, &QTabWidget::tabCloseRequested, this, [this](int index) {
+        AssetBag *asset_bag = qobject_cast<AssetBag *>(tab_widget_->widget(index));
+        Q_ASSERT(asset_bag != nullptr);
+        if (map_.remove(ActIdAndLotteryId(asset_bag->actId(), asset_bag->lotteryId())) != 1) {
+            Q_UNREACHABLE();
+        }
+        tab_widget_->removeTab(index);
+    });
     splitter_->addWidget(my_decompose_);
     splitter_->addWidget(tab_widget_);
     setCentralWidget(splitter_);
@@ -113,8 +120,9 @@ void MainWindow::onMyDecomposeDataReceived(int scene, const QByteArray &json)
     my_decompose_->setMyDecomposeData(scene, decompose_list);
 }
 
-void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name, int lottery_id,
-                                        int ruid, const QByteArray &json)
+void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name,
+                                        [[maybe_unused]] int lottery_id, [[maybe_unused]] int ruid,
+                                        const QByteArray &json)
 {
     bool ok;
     const AssetBagData d = AssetBagData::fromJson(json, &ok);
@@ -123,15 +131,20 @@ void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name, int
         return;
     }
 
-    AssetBag *asset_bag = new AssetBag;
-    asset_bag->setInfo(act_id, act_name);
-    asset_bag->setAssetBagData(d);
-    tab_widget_->addTab(asset_bag, act_name);
-    tab_widget_->setCurrentWidget(asset_bag);
-
-    Q_UNUSED(act_id);
-    Q_UNUSED(act_name);
-    Q_UNUSED(lottery_id);
-    Q_UNUSED(ruid);
-    Q_UNUSED(json);
+    auto iter = map_.constFind(ActIdAndLotteryId(act_id, lottery_id));
+    if (iter != map_.constEnd()) {
+        AssetBag *asset_bag = iter.value();
+        asset_bag->clearAssetBagData();
+        asset_bag->setAssetBagData(d);
+        tab_widget_->setCurrentWidget(asset_bag);
+    } else {
+        AssetBag *asset_bag = new AssetBag;
+        map_.insert(ActIdAndLotteryId(act_id, lottery_id), asset_bag);
+        asset_bag->setInfo(act_id, act_name);
+        connect(asset_bag, &AssetBag::refreshRequested, &manager_,
+                qOverload<int, const QString &, int>(&BilibiliRequestManager::getAssetBag));
+        asset_bag->setAssetBagData(d);
+        tab_widget_->addTab(asset_bag, act_name);
+        tab_widget_->setCurrentWidget(asset_bag);
+    }
 }

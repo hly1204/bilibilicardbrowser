@@ -191,7 +191,7 @@ AssetBag::AssetBag(QWidget *parent, Qt::WindowFlags f)
 {
     link_label_->adjustSize();
     item_cnt_label_->adjustSize();
-    item_cnt_label_->move(link_label_->geometry().topRight() + QPoint(2, 0));
+    item_cnt_label_->move(link_label_->geometry().topRight() + QPoint(10, 0));
     refresh_button_->adjustSize();
     link_label_->setTextInteractionFlags(Qt::TextBrowserInteraction);
     link_label_->setOpenExternalLinks(true);
@@ -199,9 +199,10 @@ AssetBag::AssetBag(QWidget *parent, Qt::WindowFlags f)
 
     connect(refresh_button_, &QPushButton::clicked, this, [this]() {
         if (act_id_ == 0) {
+            qWarning() << "Use setInfo() first.";
             return;
         }
-        emit refreshRequested(act_id_, lottery_id_, act_name_, lottery_name_);
+        emit refreshRequested(act_id_, act_name_, lottery_id_, lottery_name_);
     });
 
     tree_widget_->setColumnCount(6);
@@ -230,17 +231,12 @@ void AssetBag::setInfo(int act_id, int lottery_id, const QString &act_name,
                     .arg(lottery_id)
                     .arg(act_name % " - " % lottery_name));
     link_label_->adjustSize();
-    item_cnt_label_->move(link_label_->geometry().topRight() + QPoint(2, 0));
+    item_cnt_label_->move(link_label_->geometry().topRight() + QPoint(10, 0));
 }
 
-void AssetBag::setInfo(int act_id, const QString &act_name)
+void AssetBag::clearAssetBagData()
 {
-    setInfo(act_id, 0, act_name, u"全部奖池"_s);
-}
-
-void AssetBag::clearAssetBagData() // NOLINT(readability-convert-member-functions-to-static)
-{
-    Q_UNIMPLEMENTED();
+    tree_widget_->clear();
 }
 
 void AssetBag::setAssetBagData(const AssetBagData &data)

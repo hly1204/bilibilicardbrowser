@@ -132,22 +132,22 @@ class AssetBag : public QWidget
 public:
     explicit AssetBag(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    void setInfo(int act_id, int lottery_id, const QString &act_name, const QString &lottery_name);
-    void setInfo(int act_id, const QString &act_name);
-
     int actId() const { return act_id_; }
     int lotteryId() const { return lottery_id_; }
     QString actName() const { return act_name_; }
     QString lotteryName() const { return lottery_name_; }
 
 signals:
-    void refreshRequested(int act_id, int lottery_id, const QString &act_name,
+    void refreshRequested(int act_id, const QString &act_name, int lottery_id,
                           const QString &lottery_name);
 
 public slots:
-    /// \todo 多次使用同一个对象需要清理数据
+    void setInfo(int act_id, int lottery_id, const QString &act_name, const QString &lottery_name);
+    void setInfo(int act_id, const QString &act_name)
+    {
+        setInfo(act_id, 0, act_name, QStringLiteral("全部奖池"));
+    }
     void clearAssetBagData();
-    /// \warning 只能被调用一次，否则需要清理数据，这部分暂未实现
     void setAssetBagData(const AssetBagData &data);
 
 protected:
