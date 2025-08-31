@@ -39,7 +39,7 @@ jobs:
           mkdir -p bilibilicardbrowser/src
           cp -pv ../*.hh ../*.cc ../CMakeLists.txt ../LICENSE bilibilicardbrowser/src
           ../scripts/copy_deps bilibilicardbrowser
-          7z a bilibilicardbrowser
+          7z a bilibilicardbrowser.7z bilibilicardbrowser
 
       - name: Upload
         uses: actions/upload-artifact@v4
