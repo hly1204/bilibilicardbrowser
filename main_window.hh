@@ -2,6 +2,7 @@
 #define MAIN_WINDOW_HH
 
 #include <QMainWindow>
+#include <QSettings>
 #include <QThread>
 #include <QString>
 #include <QMap>
@@ -26,6 +27,10 @@ public:
     ~MainWindow() override;
 
 private slots:
+    void loadSettings();
+    void saveSettings();
+
+private slots:
     void onSetCookieButtonClicked();
     void onMyDecomposeDataReceived(int scene, const QByteArray &json);
     void onAssetBagDataReceived(int act_id, const QString &act_name, int lottery_id, int ruid,
@@ -41,7 +46,11 @@ public:
         friend inline bool operator<(const ActIdAndLotteryId &lhs, const ActIdAndLotteryId &rhs);
     };
 
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private:
+    QSettings settings_;
     QThread network_thread_;
     BilibiliRequestManager manager_;
     QSplitter *splitter_;

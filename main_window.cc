@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QScreen>
 #include <QSplitter>
 #include <QTabWidget>
 #include <QStatusBar>
@@ -19,6 +20,7 @@ using namespace Qt::Literals;
 
 MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
+      settings_(u"conf.ini"_s, QSettings::Format::IniFormat),
       network_thread_(),
       manager_(),
       splitter_(new QSplitter(Qt::Horizontal)),
@@ -61,6 +63,8 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
         status_bar->addPermanentWidget(set_cookie_button_);
     }
 
+    loadSettings();
+
     manager_.moveToThread(&network_thread_);
     network_thread_.start();
 }
@@ -69,6 +73,46 @@ MainWindow::~MainWindow()
 {
     network_thread_.quit();
     network_thread_.wait();
+}
+
+void MainWindow::loadSettings()
+{
+    settings_.beginGroup("WindowSize");
+    const int w = settings_.value("width", 600).toInt();
+    const int h = settings_.value("height", 300).toInt();
+    resize(w, h);
+    settings_.endGroup();
+
+    settings_.beginGroup("WindowPosition");
+    if (QScreen *screen = qApp->primaryScreen()) {
+        const int ax = settings_.value("x", (screen->size().width() - w) / 2).toInt();
+        const int ay = settings_.value("y", (screen->size().height() - h) / 2).toInt();
+        move(ax, ay);
+    }
+    settings_.endGroup();
+
+    settings_.beginGroup("Splitter");
+    if (settings_.contains("splitter_size")) {
+        splitter_->restoreState(settings_.value("splitter_size").toByteArray());
+    }
+    settings_.endGroup();
+}
+
+void MainWindow::saveSettings()
+{
+    settings_.beginGroup("WindowSize");
+    settings_.setValue("width", width());
+    settings_.setValue("height", height());
+    settings_.endGroup();
+
+    settings_.beginGroup("WindowPosition");
+    settings_.setValue("x", x());
+    settings_.setValue("y", y());
+    settings_.endGroup();
+
+    settings_.beginGroup("Splitter");
+    settings_.setValue("splitter_size", splitter_->saveState());
+    settings_.endGroup();
 }
 
 void MainWindow::onSetCookieButtonClicked()
@@ -147,4 +191,10 @@ void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name,
         tab_widget_->addTab(asset_bag, act_name);
         tab_widget_->setCurrentWidget(asset_bag);
     }
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    saveSettings();
+    QMainWindow::closeEvent(event);
 }
