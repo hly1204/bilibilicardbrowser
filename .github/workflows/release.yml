@@ -27,6 +27,7 @@ jobs:
             mingw-w64-${{ matrix.name }}-zlib
             mingw-w64-${{ matrix.name }}-brotli
             mingw-w64-${{ matrix.name }}-qt6
+            mingw-w64-${{ matrix.name }}-7zip
 
       - name: Build
         shell: msys2 {0}
@@ -38,12 +39,13 @@ jobs:
           mkdir -p bilibilicardbrowser/src
           cp -pv ../*.hh ../*.cc ../CMakeLists.txt ../LICENSE bilibilicardbrowser/src
           ../scripts/copy_deps bilibilicardbrowser
+          7z a bilibilicardbrowser
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: bilibilicardbrowser-${{ matrix.name }}
-          path: ${{ github.workspace }}/build/bilibilicardbrowser
+          path: ${{ github.workspace }}/build/bilibilicardbrowser.7z
 
   release:
     runs-on: ubuntu-latest
@@ -60,4 +62,4 @@ jobs:
         id: upload_to_release
         uses: softprops/action-gh-release@v1
         with:
-          files: "*.zip"
+          files: "*.7z"
