@@ -30,6 +30,7 @@ public:
 private slots:
     void loadSettings();
     void saveSettings();
+    void exportAsCsvFile();
 
 private slots:
     void onSetCookieButtonClicked();

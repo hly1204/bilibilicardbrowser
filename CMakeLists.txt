@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(bilibilicardbrowser VERSION 1.0.0 LANGUAGES CXX)
+project(bilibilicardbrowser VERSION 1.0.1 LANGUAGES CXX)
 
 # see: https://json.nlohmann.me/integration/cmake/#json_implicitconversions
 set(JSON_ImplicitConversions OFF)
@@ -71,10 +71,12 @@ target_compile_options(bilibilicardbrowser PRIVATE
 )
 
 target_sources(bilibilicardbrowser PRIVATE
+    json_helper.hh
     bilibili_request_manager.hh
     compress_helper.hh
     my_decompose.hh
     asset_bag.hh
+    collection_export_worker.hh
     main_window.hh
 )
 
@@ -84,6 +86,7 @@ target_sources(bilibilicardbrowser PRIVATE
     compress_helper.cc
     my_decompose.cc
     asset_bag.cc
+    collection_export_worker.cc
     main_window.cc
 )
 

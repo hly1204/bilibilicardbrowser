@@ -9,36 +9,9 @@
 #include <nlohmann/json.hpp>
 
 #include "asset_bag.hh"
+#include "json_helper.hh"
 
 using namespace Qt::Literals;
-
-template <typename Tp>
-void from_json(const nlohmann::json &j, QList<Tp> &list)
-{
-    list.clear();
-    if (!j.is_array()) {
-        return;
-    }
-
-    list.reserve(std::size(j));
-    for (auto &&item : j) {
-        auto &&last_item = list.emplace_back();
-        item.get_to(last_item);
-    }
-}
-
-void from_json(const nlohmann::json &j, QString &s)
-{
-    s = QString::fromStdString(j.get<std::string>());
-}
-void from_json(const nlohmann::json &j, QUrl &u)
-{
-    u.setUrl(j.get<QString>());
-}
-void from_json(const nlohmann::json &j, QDateTime &d)
-{
-    d = QDateTime::fromSecsSinceEpoch(j.get<qint64>());
-}
 
 void from_json(const nlohmann::json &j, AssetBagData::CardIdListItem &item)
 {
@@ -247,7 +220,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
 
     // 可以抽到的卡片
     if (data.item_list.has_value()) {
-        for (auto &&item : *data.item_list) {
+        for (auto &&item : data.item_list.value()) {
             if (!item.card_item.has_value()) {
                 continue;
             }
@@ -266,7 +239,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                     new QLabel(item.card_item->is_limited_card != 0 ? u"限量"_s : u"无限制"_s));
 
             if (item.card_item->card_id_list.has_value()) {
-                for (auto &&card : *item.card_item->card_id_list) {
+                for (auto &&card : item.card_item->card_id_list.value()) {
                     QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
                     tree_widget_->setItemWidget(sub_item, 1, new QLabel(item.card_item->card_name));
                     tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
@@ -281,7 +254,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
 
     // 典藏卡
     if (data.collect_list.has_value()) {
-        for (auto &&collect : *data.collect_list) {
+        for (auto &&collect : data.collect_list.value()) {
             if (!collect.card_item.has_value() || !collect.card_item->card_type_info.has_value()) {
                 continue;
             }
@@ -298,7 +271,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             tree_widget_->setItemWidget(top_item, 4, new QLabel(u"/"_s));
 
             if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
-                for (auto &&card : *collect.card_item->card_asset_info->card_item->card_id_list) {
+                for (auto &&card : collect.card_item->card_asset_info->card_item->card_id_list.value()) {
                     QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
                     tree_widget_->setItemWidget(
                             sub_item, 1, new QLabel(collect.card_item->card_type_info->name));

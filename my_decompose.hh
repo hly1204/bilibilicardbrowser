@@ -2,8 +2,11 @@
 #define MY_DECOMPOSE_HH
 
 #include <QWidget>
+#include <QByteArray>
 #include <QList>
 #include <QMap>
+
+#include <optional>
 
 QT_BEGIN_NAMESPACE
 class QTableWidget;
@@ -12,9 +15,20 @@ QT_END_NAMESPACE
 
 struct MyDecomposeData
 {
-    QString act_name;
-    int act_id;
-    int card_num;
+private:
+    MyDecomposeData() { }
+
+public:
+    static MyDecomposeData fromJson(const QByteArray &json, bool *ok = nullptr);
+
+    struct ListItem
+    {
+        QString act_name;
+        int act_id;
+        int card_num;
+    };
+
+    std::optional<QList<ListItem>> list;
 };
 
 class MyDecompose : public QWidget
@@ -26,11 +40,14 @@ public:
 
 signals:
     void refreshRequested();
+    void exportRequested();
     void detailRequested(int act_id, const QString &act_name);
 
 public slots:
     void clearMyDecomposeData();
-    void setMyDecomposeData(int scene, const QList<MyDecomposeData> &data);
+    void setMyDecomposeData(int scene, const MyDecomposeData &data);
+    void disableExportButton();
+    void enableExportButton();
 
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -38,6 +55,7 @@ protected:
 private:
     QTableWidget *table_widget_;
     QPushButton *refresh_button_;
+    QPushButton *export_button_;
     QMap<int, int> map_; // {act_id, row_id}
 };
 

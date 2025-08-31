@@ -5,17 +5,17 @@
 #include <QStatusBar>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QFileDialog>
 #include <QList>
 #include <QInputDialog>
 #include <QOverload>
 #include <QtLogging>
 #include <QDebug>
 
-#include <nlohmann/json.hpp>
-
 #include "main_window.hh"
 #include "my_decompose.hh"
 #include "asset_bag.hh"
+#include "collection_export_worker.hh"
 
 using namespace Qt::Literals;
 
@@ -53,6 +53,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 1);
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 2);
     });
+    connect(my_decompose_, &MyDecompose::exportRequested, this, &MainWindow::exportAsCsvFile);
     connect(my_decompose_, &MyDecompose::detailRequested, &manager_,
             qOverload<int, const QString &>(&BilibiliRequestManager::getAssetBag));
     connect(&manager_, &BilibiliRequestManager::myDecomposeDataReceived, this,
@@ -144,6 +145,31 @@ void MainWindow::saveSettings()
     settings_.endGroup();
 }
 
+void MainWindow::exportAsCsvFile()
+{
+    const QString file_name = QFileDialog::getSaveFileName(this, u"导出到 CSV 文件"_s,
+                                                           qApp->applicationDirPath() % "/a.csv",
+                                                           u"CSV 文件 (*.csv)"_s);
+
+    CollectionExportWorker *worker = new CollectionExportWorker;
+    connect(worker, &CollectionExportWorker::progressChanged, this, [this](int current, int total) {
+        statusBar()->showMessage(u"导出中... %1/%2"_s.arg(current).arg(total));
+    });
+    connect(worker, &CollectionExportWorker::finished, my_decompose_,
+            &MyDecompose::enableExportButton);
+    connect(worker, &CollectionExportWorker::finished, this,
+            [this]() { statusBar()->showMessage(u"导出完成"_s, 3000); });
+    connect(worker, &CollectionExportWorker::finished, worker,
+            &CollectionExportWorker::deleteLater);
+
+    my_decompose_->disableExportButton();
+    worker->moveToThread(&network_thread_);
+    QString cookie;
+    QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::cookie,
+                              Qt::BlockingQueuedConnection, qReturnArg(cookie));
+    QMetaObject::invokeMethod(worker, &CollectionExportWorker::exportAsCsvFile, file_name, cookie);
+}
+
 void MainWindow::onSetCookieButtonClicked()
 {
     bool ok;
@@ -159,38 +185,14 @@ void MainWindow::onSetCookieButtonClicked()
 
 void MainWindow::onMyDecomposeDataReceived(int scene, const QByteArray &json)
 {
-    const nlohmann::json j = nlohmann::json::parse(json.toStdString(), nullptr, false);
-    if (j.is_discarded()) {
+    bool ok;
+    const MyDecomposeData d = MyDecomposeData::fromJson(json, &ok);
+    if (!ok) {
         statusBar()->showMessage(u"json 非法"_s, 3000);
         return;
     }
 
-    const int code = j.at("code").get<int>();
-    const std::string message = j.at("message").get<std::string>();
-    if (code != 0) {
-        statusBar()->showMessage(u"code: %1, message: %2"_s.arg(code).arg(message), 3000);
-        return;
-    }
-
-    auto &&data = j.at("data");
-    auto &&list = data.at("list");
-    if (list.is_null()) {
-        qInfo() << "You don't have any card";
-        statusBar()->showMessage(u"你没有任何卡"_s, 3000);
-        return;
-    }
-
-    QList<MyDecomposeData> decompose_list;
-    decompose_list.reserve(std::size(list)); // NOLINT(cppcoreguidelines-narrowing-conversions)
-    for (auto &&a : list) {
-        MyDecomposeData decompose_data = {
-            QString::fromStdString(a.at("act_name").get<std::string>()),
-            a.at("act_id").get<int>(),
-            a.at("card_num").get<int>(),
-        };
-        decompose_list.emplace_back(std::move(decompose_data));
-    }
-    my_decompose_->setMyDecomposeData(scene, decompose_list);
+    my_decompose_->setMyDecomposeData(scene, d);
 }
 
 void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name,

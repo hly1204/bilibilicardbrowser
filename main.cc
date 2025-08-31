@@ -13,8 +13,8 @@ int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
 
+    qRegisterMetaType<MyDecomposeData>("MyDecomposeData");
     qRegisterMetaType<AssetBagData>("AssetBagData");
-    qRegisterMetaType<QList<MyDecomposeData>>("QList<MyDecomposeData>");
 
     app.setApplicationName(u"我的小卡片"_s); // NOLINT(readability-static-accessed-through-instance)
     app.setApplicationVersion( // NOLINT(readability-static-accessed-through-instance)
