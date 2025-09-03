@@ -150,6 +150,10 @@ void MainWindow::exportAsCsvFile()
     const QString file_name = QFileDialog::getSaveFileName(this, u"导出到 CSV 文件"_s,
                                                            qApp->applicationDirPath() % "/a.csv",
                                                            u"CSV 文件 (*.csv)"_s);
+    if (file_name.isEmpty()) {
+        statusBar()->showMessage(u"取消"_s, 3000);
+        return;
+    }
 
     CollectionExportWorker *worker = new CollectionExportWorker;
     connect(worker, &CollectionExportWorker::progressChanged, this, [this](int current, int total) {
