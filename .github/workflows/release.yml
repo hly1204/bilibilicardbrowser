@@ -24,6 +24,7 @@ jobs:
             git
             mingw-w64-${{ matrix.name }}-toolchain
             mingw-w64-${{ matrix.name }}-cmake
+            mingw-w64-${{ matrix.name }}-clang
             mingw-w64-${{ matrix.name }}-zlib
             mingw-w64-${{ matrix.name }}-brotli
             mingw-w64-${{ matrix.name }}-qt6
@@ -32,20 +33,31 @@ jobs:
       - name: Build
         shell: msys2 {0}
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -S .
+          cmake -B build \
+                -D CMAKE_BUILD_TYPE=Release \
+                -D CMAKE_C_COMPILER=clang \
+                -D CMAKE_CXX_COMPILER=clang++ \
+                --no-warn-unused-cli \
+                -S .
           cd build
           cmake --build .
-          cmake --install . --prefix $PWD/bilibilicardbrowser --strip
-          mkdir -p bilibilicardbrowser/src
-          cp -pv ../*.hh ../*.cc ../CMakeLists.txt ../LICENSE bilibilicardbrowser/src
-          ../scripts/copy_deps bilibilicardbrowser
-          7z a bilibilicardbrowser.7z bilibilicardbrowser
+          cmake --install . \
+                --prefix $PWD/bilibilicardbrowser-${{ matrix.name }} \
+                --strip
+          mkdir -p bilibilicardbrowser-${{ matrix.name }}/src
+          cp -pv ../*.hh \
+                 ../*.cc \
+                 ../CMakeLists.txt \
+                 ../LICENSE \
+                 bilibilicardbrowser-${{ matrix.name }}/src
+          ../scripts/copy_deps bilibilicardbrowser-${{ matrix.name }}
+          7z a bilibilicardbrowser-${{ matrix.name }}.7z bilibilicardbrowser-${{ matrix.name }}
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: bilibilicardbrowser-${{ matrix.name }}
-          path: ${{ github.workspace }}/build/bilibilicardbrowser.7z
+          path: ${{ github.workspace }}/build/bilibilicardbrowser-${{ matrix.name }}.7z
 
   release:
     runs-on: ubuntu-latest
