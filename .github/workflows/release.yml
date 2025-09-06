@@ -44,12 +44,6 @@ jobs:
           cmake --install . \
                 --prefix $PWD/bilibilicardbrowser-${{ matrix.name }} \
                 --strip
-          mkdir -p bilibilicardbrowser-${{ matrix.name }}/src
-          cp -pv ../*.hh \
-                 ../*.cc \
-                 ../CMakeLists.txt \
-                 ../LICENSE \
-                 bilibilicardbrowser-${{ matrix.name }}/src
           ../scripts/copy_deps bilibilicardbrowser-${{ matrix.name }}
           7z a bilibilicardbrowser-${{ matrix.name }}.7z bilibilicardbrowser-${{ matrix.name }}
 
