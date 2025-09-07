@@ -82,6 +82,7 @@ MyDecompose::MyDecompose(QWidget *parent, Qt::WindowFlags f)
             u"卡片种类数"_s,
             u"操作"_s,
     });
+    table_widget_->setSortingEnabled(true);
 
     connect(refresh_button_, &QPushButton::clicked, this, &MyDecompose::refreshRequested);
     connect(export_button_, &QPushButton::clicked, this, &MyDecompose::exportRequested);
