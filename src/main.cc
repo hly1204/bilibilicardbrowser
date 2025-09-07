@@ -16,14 +16,16 @@ int main(int argc, char *argv[])
     qRegisterMetaType<MyDecomposeData>("MyDecomposeData");
     qRegisterMetaType<AssetBagData>("AssetBagData");
 
-    app.setApplicationName(u"我的小卡片"_s); // NOLINT(readability-static-accessed-through-instance)
-    app.setApplicationVersion( // NOLINT(readability-static-accessed-through-instance)
-            APPLICATION_VERSION);
+    // NOLINTNEXTLINE(readability-static-accessed-through-instance)
+    app.setApplicationName(u"我的小卡片"_s);
+    // NOLINTNEXTLINE(readability-static-accessed-through-instance)
+    app.setApplicationVersion(APPLICATION_VERSION);
 
     QTranslator t;
     if (t.load(QLocale(QLocale::Chinese), u"qt"_s, u"_"_s,
                QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
-        app.installTranslator(&t); // NOLINT(readability-static-accessed-through-instance)
+        // NOLINTNEXTLINE(readability-static-accessed-through-instance)
+        app.installTranslator(&t);
     } else {
         qWarning() << "Failed to load translations";
     }
@@ -31,5 +33,6 @@ int main(int argc, char *argv[])
     MainWindow win;
     win.show();
 
-    return app.exec(); // NOLINT(readability-static-accessed-through-instance)
+    // NOLINTNEXTLINE(readability-static-accessed-through-instance)
+    return app.exec();
 }
