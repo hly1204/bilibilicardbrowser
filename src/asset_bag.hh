@@ -58,26 +58,7 @@ public:
         };
         std::optional<CardItem> card_item;
 
-        QString scarcity() const
-        {
-            if (!card_item.has_value()) {
-                return QStringLiteral("非卡片");
-            }
-            switch (card_item->card_scarcity) {
-            case 0:
-                return QStringLiteral("典藏卡");
-            case 10:
-                return QStringLiteral("普卡");
-            case 20:
-                return QStringLiteral("稀缺");
-            case 30:
-                return QStringLiteral("小隐藏");
-            case 40:
-                return QStringLiteral("大隐藏");
-            default:
-                return QStringLiteral("未知");
-            }
-        };
+        [[nodiscard]] inline QString scarcity() const;
     };
 
     struct CollectListItem
@@ -132,10 +113,10 @@ class AssetBag : public QWidget
 public:
     explicit AssetBag(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
-    int actId() const { return act_id_; }
-    int lotteryId() const { return lottery_id_; }
-    QString actName() const { return act_name_; }
-    QString lotteryName() const { return lottery_name_; }
+    [[nodiscard]] int actId() const { return act_id_; }
+    [[nodiscard]] int lotteryId() const { return lottery_id_; }
+    [[nodiscard]] QString actName() const { return act_name_; }
+    [[nodiscard]] QString lotteryName() const { return lottery_name_; }
 
 signals:
     void refreshRequested(int act_id, const QString &act_name, int lottery_id,
@@ -163,5 +144,22 @@ private:
     QTreeWidget *tree_widget_;
     QPushButton *refresh_button_;
 };
+
+// clang-format off
+inline QString AssetBagData::ListItem::scarcity() const
+{
+    if (!card_item.has_value()) {
+        return QStringLiteral("非卡片");
+    }
+    switch (card_item->card_scarcity) {
+    case 0: return QStringLiteral("典藏卡");
+    case 10: return QStringLiteral("普卡");
+    case 20: return QStringLiteral("稀缺");
+    case 30: return QStringLiteral("小隐藏");
+    case 40: return QStringLiteral("大隐藏");
+    default: return QStringLiteral("未知");
+    }
+};
+// clang-format on
 
 #endif

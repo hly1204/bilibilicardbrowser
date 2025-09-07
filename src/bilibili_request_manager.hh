@@ -24,12 +24,12 @@ public:
     explicit BilibiliRequestManager(QObject *parent = nullptr);
 
     void setUserAgent(const QString &user_agent);
-    QString userAgent() const { return user_agent_; }
+    [[nodiscard]] QString userAgent() const { return user_agent_; }
 
     void setCookie(const QString &cookie);
-    QString cookie() const { return cookie_; }
-    QString csrf() const { return csrf_; }
-    QString buvid() const { return buvid_; }
+    [[nodiscard]] QString cookie() const { return cookie_; }
+    [[nodiscard]] QString csrf() const { return csrf_; }
+    [[nodiscard]] QString buvid() const { return buvid_; }
 
 public slots:
     void getMyDecompose(int scene);
