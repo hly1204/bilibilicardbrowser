@@ -236,7 +236,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                                % '%'));
             tree_widget_->setItemWidget(
                     top_item, 4,
-                    new QLabel(item.card_item->is_limited_card != 0 ? u"限量"_s : u"无限制"_s));
+                    new QLabel(item.card_item->is_limited_card != 0 ? u"限量"_s : u""_s));
 
             if (item.card_item->card_id_list.has_value()) {
                 for (auto &&card : item.card_item->card_id_list.value()) {
@@ -271,7 +271,8 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             tree_widget_->setItemWidget(top_item, 4, new QLabel(u"/"_s));
 
             if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
-                for (auto &&card : collect.card_item->card_asset_info->card_item->card_id_list.value()) {
+                for (auto &&card :
+                     collect.card_item->card_asset_info->card_item->card_id_list.value()) {
                     QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
                     tree_widget_->setItemWidget(
                             sub_item, 1, new QLabel(collect.card_item->card_type_info->name));
