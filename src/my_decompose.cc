@@ -144,6 +144,7 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
                 continue;
             }
             if (QTableWidgetItem *item = table_widget_->item(iter.value(), scene == 1 ? 2 : 3)) {
+                Q_ASSERT(dynamic_cast<MyWidgetItem *>(item) != nullptr);
                 item->setText(QString::number(data.list->at(i).card_num));
             } else {
                 table_widget_->setItem(
