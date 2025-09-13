@@ -102,6 +102,16 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
         return;
     }
 
+    // 我们需要存储卡片数量/种类数，重载比较运算符即可
+    class MyWidgetItem : public QTableWidgetItem
+    {
+        using QTableWidgetItem::QTableWidgetItem;
+        bool operator<(const QTableWidgetItem &other) const override
+        {
+            return text().toInt() < other.text().toInt();
+        }
+    };
+
     if (table_widget_->rowCount() == 0) {
         table_widget_->setRowCount(
                 std::size(data.list.value())); // NOLINT(cppcoreguidelines-narrowing-conversions)
@@ -115,9 +125,8 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
             table_widget_->setCellWidget(i, 0, act_name);
             table_widget_->setItem(i, 1,
                                    new QTableWidgetItem(QString::number(data.list->at(i).act_id)));
-            table_widget_->setItem(
-                    i, scene == 1 ? 2 : 3,
-                    new QTableWidgetItem(QString::number(data.list->at(i).card_num)));
+            table_widget_->setItem(i, scene == 1 ? 2 : 3,
+                                   new MyWidgetItem(QString::number(data.list->at(i).card_num)));
             QPushButton *detail_button = new QPushButton(u"详细"_s);
             connect(detail_button, &QPushButton::clicked, this,
                     [this, act_id = data.list->at(i).act_id,
@@ -139,7 +148,7 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
             } else {
                 table_widget_->setItem(
                         iter.value(), scene == 1 ? 2 : 3,
-                        new QTableWidgetItem(QString::number(data.list->at(i).card_num)));
+                        new MyWidgetItem(QString::number(data.list->at(i).card_num)));
             }
         }
     }
