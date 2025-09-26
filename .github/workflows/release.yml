@@ -41,9 +41,9 @@ jobs:
                 -S .
           cd build
           cmake --build .
-          cmake --install . \
-                --prefix $PWD/bilibilicardbrowser-${{ matrix.name }} \
-                --strip
+          mkdir $PWD/bilibilicardbrowser-${{ matrix.name }}
+          strip -p bilibilicardbrowser.exe -o bilibilicardbrowser-${{ matrix.name }}/bilibilicardbrowser.exe
+          windeployqt6 bilibilicardbrowser-${{ matrix.name }} --release --exclude-plugins qpdf,qsvg --translations en,zh_CN
           ../scripts/copy_deps bilibilicardbrowser-${{ matrix.name }}
           7z a bilibilicardbrowser-${{ matrix.name }}.7z bilibilicardbrowser-${{ matrix.name }}
 

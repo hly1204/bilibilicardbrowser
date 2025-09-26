@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <QLibraryInfo>
 #include <QTranslator>
 #include <QString>
 
@@ -22,8 +21,7 @@ int main(int argc, char *argv[])
     app.setApplicationVersion(APPLICATION_VERSION);
 
     QTranslator t;
-    if (t.load(QLocale(QLocale::Chinese), u"qt"_s, u"_"_s,
-               QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
+    if (t.load(QLocale(QLocale::Chinese), u"qt"_s, u"_"_s, u"translations"_s)) {
         // NOLINTNEXTLINE(readability-static-accessed-through-instance)
         app.installTranslator(&t);
     } else {
