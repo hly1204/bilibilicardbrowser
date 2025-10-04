@@ -82,7 +82,6 @@ MyDecompose::MyDecompose(QWidget *parent, Qt::WindowFlags f)
             u"卡片种类数"_s,
             u"操作"_s,
     });
-    table_widget_->setSortingEnabled(true);
 
     connect(refresh_button_, &QPushButton::clicked, this, &MyDecompose::refreshRequested);
     connect(export_button_, &QPushButton::clicked, this, &MyDecompose::exportRequested);
@@ -92,6 +91,8 @@ void MyDecompose::clearMyDecomposeData()
 {
     table_widget_->setRowCount(0);
     map_.clear();
+    // disable sorting before setting data
+    table_widget_->setSortingEnabled(false);
 }
 
 void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
@@ -152,6 +153,9 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
                         new MyWidgetItem(QString::number(data.list->at(i).card_num)));
             }
         }
+        // enable sorting after setting all data
+        table_widget_->setSortingEnabled(true);
+        // `map_` should not be used from now on...
     }
     table_widget_->resizeColumnsToContents();
 }
