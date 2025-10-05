@@ -15,7 +15,6 @@
 #include "main_window.hh"
 #include "my_decompose.hh"
 #include "asset_bag.hh"
-#include "collection_export_worker.hh"
 
 using namespace Qt::Literals;
 
