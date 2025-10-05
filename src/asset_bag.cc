@@ -160,12 +160,16 @@ AssetBag::AssetBag(QWidget *parent, Qt::WindowFlags f)
       link_label_(new QLabel(u"未知收藏集"_s, this)),
       item_cnt_label_(new QLabel(u"拥有/总计: %1/%2"_s.arg(0).arg(1), this)),
       tree_widget_(new QTreeWidget(this)),
-      refresh_button_(new QPushButton(u"刷新"_s, this))
+      refresh_button_(new QPushButton(u"刷新"_s, this)),
+      expand_all_button_(new QPushButton(u"展开全部"_s, this)),
+      collapse_all_button_(new QPushButton(u"折叠全部"_s, this))
 {
     link_label_->adjustSize();
     item_cnt_label_->adjustSize();
     item_cnt_label_->move(link_label_->geometry().topRight() + QPoint(10, 0));
     refresh_button_->adjustSize();
+    expand_all_button_->adjustSize();
+    collapse_all_button_->adjustSize();
     link_label_->setTextInteractionFlags(Qt::TextBrowserInteraction);
     link_label_->setOpenExternalLinks(true);
     tree_widget_->move(link_label_->geometry().bottomLeft() + QPoint(0, 1));
@@ -177,6 +181,8 @@ AssetBag::AssetBag(QWidget *parent, Qt::WindowFlags f)
         }
         emit refreshRequested(act_id_, act_name_, lottery_id_, lottery_name_);
     });
+    connect(expand_all_button_, &QPushButton::clicked, tree_widget_, &QTreeWidget::expandAll);
+    connect(collapse_all_button_, &QPushButton::clicked, tree_widget_, &QTreeWidget::collapseAll);
 
     tree_widget_->setColumnCount(6);
     tree_widget_->setHeaderLabels(QStringList{
@@ -297,4 +303,6 @@ void AssetBag::resizeEvent(QResizeEvent *event)
     tree_widget_->resize(size.width(),
                          size.height() - 2 - link_label_->height() - 2 - refresh_button_->height());
     refresh_button_->move(tree_widget_->geometry().bottomLeft() + QPoint(0, 1));
+    expand_all_button_->move(refresh_button_->geometry().topRight() + QPoint(1, 0));
+    collapse_all_button_->move(expand_all_button_->geometry().topRight() + QPoint(1, 0));
 }

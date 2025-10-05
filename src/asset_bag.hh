@@ -140,6 +140,8 @@ private:
     QLabel *item_cnt_label_;
     QTreeWidget *tree_widget_;
     QPushButton *refresh_button_;
+    QPushButton *expand_all_button_;
+    QPushButton *collapse_all_button_;
 };
 
 // clang-format off
