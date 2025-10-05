@@ -21,6 +21,7 @@ public:
 
 public slots:
     void exportToCsvFile(const QString &file_name, const QString &cookie);
+    void stopAction();
 
 private slots:
     void onMyDecomposeDataReceived(int scene, const QByteArray &json);

@@ -8,6 +8,7 @@
 #include <QMap>
 
 #include "bilibili_request_manager.hh"
+#include "collection_export_worker.hh"
 
 QT_BEGIN_NAMESPACE
 class QSplitter;
@@ -55,6 +56,7 @@ private:
     QSettings settings_;
     QThread network_thread_;
     BilibiliRequestManager manager_;
+    CollectionExportWorker worker_;
     QSplitter *splitter_;
     MyDecompose *my_decompose_;
     QTabWidget *tab_widget_;

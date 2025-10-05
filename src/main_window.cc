@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
       settings_(u"conf.ini"_s, QSettings::Format::IniFormat),
       network_thread_(),
       manager_(),
+      worker_(),
       splitter_(new QSplitter(Qt::Horizontal)),
       my_decompose_(new MyDecompose),
       tab_widget_(new QTabWidget),
@@ -68,6 +69,16 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     }
 
     manager_.moveToThread(&network_thread_);
+
+    connect(&worker_, &CollectionExportWorker::progressChanged, this,
+            [this](int current, int total) {
+                statusBar()->showMessage(u"导出中... %1/%2"_s.arg(current).arg(total));
+            });
+    connect(&worker_, &CollectionExportWorker::finished, my_decompose_,
+            &MyDecompose::enableExportButton);
+    connect(&worker_, &CollectionExportWorker::finished, this,
+            [this]() { statusBar()->showMessage(u"导出完成"_s, 3000); });
+    worker_.moveToThread(&network_thread_);
     network_thread_.start();
 
     loadSettings();
@@ -155,23 +166,12 @@ void MainWindow::exportToCsvFile()
         return;
     }
 
-    CollectionExportWorker *worker = new CollectionExportWorker;
-    connect(worker, &CollectionExportWorker::progressChanged, this, [this](int current, int total) {
-        statusBar()->showMessage(u"导出中... %1/%2"_s.arg(current).arg(total));
-    });
-    connect(worker, &CollectionExportWorker::finished, my_decompose_,
-            &MyDecompose::enableExportButton);
-    connect(worker, &CollectionExportWorker::finished, this,
-            [this]() { statusBar()->showMessage(u"导出完成"_s, 3000); });
-    connect(worker, &CollectionExportWorker::finished, worker,
-            &CollectionExportWorker::deleteLater);
-
     my_decompose_->disableExportButton();
-    worker->moveToThread(&network_thread_);
     QString cookie;
     QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::cookie,
                               Qt::BlockingQueuedConnection, qReturnArg(cookie));
-    QMetaObject::invokeMethod(worker, &CollectionExportWorker::exportToCsvFile, file_name, cookie);
+    QMetaObject::invokeMethod(&worker_, &CollectionExportWorker::exportToCsvFile, file_name,
+                              cookie);
 }
 
 void MainWindow::onSetCookieButtonClicked()
@@ -231,5 +231,7 @@ void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name,
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     saveSettings();
+    QMetaObject::invokeMethod(&worker_, &CollectionExportWorker::stopAction,
+                              Qt::BlockingQueuedConnection);
     QMainWindow::closeEvent(event);
 }

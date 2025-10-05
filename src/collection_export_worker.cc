@@ -29,6 +29,9 @@ CollectionExportWorker::CollectionExportWorker(QObject *parent)
 
 void CollectionExportWorker::exportToCsvFile(const QString &file_name, const QString &cookie)
 {
+    if (file_->isOpen()) {
+        file_->close();
+    }
     file_->setFileName(file_name);
     if (!file_->open(QIODevice::WriteOnly | QIODevice::Text)) {
         qWarning() << "Unable to open file:" << file_name;
@@ -42,9 +45,28 @@ void CollectionExportWorker::exportToCsvFile(const QString &file_name, const QSt
     manager_->getMyDecompose(1);
 }
 
+void CollectionExportWorker::stopAction()
+{
+    if (timer_id_ != Qt::TimerId::Invalid) {
+        killTimer(timer_id_);
+    }
+    if (file_->isOpen()) {
+        file_->close();
+    }
+
+    current_ = 0;
+    total_ = 0;
+    my_decompose_data_.reset();
+}
+
 void CollectionExportWorker::onMyDecomposeDataReceived([[maybe_unused]] int scene,
                                                        const QByteArray &json)
 {
+    // file is closed
+    if (!file_->isOpen()) {
+        return;
+    }
+
     bool ok;
     const MyDecomposeData d = MyDecomposeData::fromJson(json, &ok);
 
@@ -66,6 +88,7 @@ void CollectionExportWorker::onMyDecomposeDataReceived([[maybe_unused]] int scen
         return;
     }
 
+    current_ = 0;
     // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions)
     total_ = my_decompose_data_->list->size();
 }
@@ -80,43 +103,53 @@ void CollectionExportWorker::onAssetBagDataReceived([[maybe_unused]] int act_id,
     const AssetBagData d = AssetBagData::fromJson(json, &ok);
 
     if (!ok) {
+        if (file_->isOpen()) {
+            file_->close();
+        }
         emit finished();
         return;
     }
 
-    QTextStream out(file_);
+    if (!file_->isOpen()) {
+        return;
+    }
 
-    if (d.item_list.has_value()) {
-        for (auto &&item : d.item_list.value()) {
-            if (!item.card_item.has_value()) {
-                continue;
-            }
+    {
+        QTextStream out(file_);
 
-            if (item.card_item->card_id_list.has_value()) {
-                for (auto &&card : item.card_item->card_id_list.value()) {
-                    QStringList string_list;
-                    string_list << act_name << item.card_item->card_name << item.scarcity()
-                                << card.card_no
-                                << (item.card_item->is_limited_card != 0 ? u"限量"_s : u"/"_s);
-                    out << string_list.join(',') << '\n';
+        if (d.item_list.has_value()) {
+            for (auto &&item : d.item_list.value()) {
+                if (!item.card_item.has_value()) {
+                    continue;
+                }
+
+                if (item.card_item->card_id_list.has_value()) {
+                    for (auto &&card : item.card_item->card_id_list.value()) {
+                        QStringList string_list;
+                        string_list << act_name << item.card_item->card_name << item.scarcity()
+                                    << card.card_no
+                                    << (item.card_item->is_limited_card != 0 ? u"限量"_s : u"/"_s);
+                        out << string_list.join(',') << '\n';
+                    }
                 }
             }
         }
-    }
 
-    if (d.collect_list.has_value()) {
-        for (auto &&collect : d.collect_list.value()) {
-            if (!collect.card_item.has_value() || !collect.card_item->card_type_info.has_value()) {
-                continue;
-            }
+        if (d.collect_list.has_value()) {
+            for (auto &&collect : d.collect_list.value()) {
+                if (!collect.card_item.has_value()
+                    || !collect.card_item->card_type_info.has_value()) {
+                    continue;
+                }
 
-            if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
-                for (auto &&card :
-                     collect.card_item->card_asset_info->card_item->card_id_list.value()) {
-                    QStringList string_list;
-                    string_list << act_name << collect.card_item->card_type_info->name
-                                << u"典藏卡"_s << card.card_no << u"/"_s;
-                    out << string_list.join(',') << '\n';
+                if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
+                    for (auto &&card :
+                         collect.card_item->card_asset_info->card_item->card_id_list.value()) {
+                        QStringList string_list;
+                        string_list << act_name << collect.card_item->card_type_info->name
+                                    << u"典藏卡"_s << card.card_no << u"/"_s;
+                        out << string_list.join(',') << '\n';
+                    }
                 }
             }
         }
@@ -124,6 +157,10 @@ void CollectionExportWorker::onAssetBagDataReceived([[maybe_unused]] int act_id,
 
     emit progressChanged(++current_, total_);
     if (current_ == total_) {
+        // close file when finished
+        if (file_->isOpen()) {
+            file_->close();
+        }
         emit finished();
     }
 }
@@ -138,6 +175,7 @@ void CollectionExportWorker::timerEvent(QTimerEvent *event)
         }
         if (my_decompose_data_->list->empty()) {
             killTimer(timer_id_);
+            timer_id_ = Qt::TimerId::Invalid;
         }
     }
     QObject::timerEvent(event);
