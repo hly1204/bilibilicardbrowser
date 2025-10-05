@@ -16,12 +16,9 @@ class QTreeWidget;
 class QPushButton;
 QT_END_NAMESPACE
 
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
 struct AssetBagData
 {
-private:
-    AssetBagData() { } // NOLINT(cppcoreguidelines-pro-type-member-init)
-
-public:
     static AssetBagData fromJson(const QByteArray &json, bool *ok = nullptr);
 
     int total_item_cnt;

@@ -15,10 +15,6 @@ QT_END_NAMESPACE
 
 struct MyDecomposeData
 {
-private:
-    MyDecomposeData() { }
-
-public:
     static MyDecomposeData fromJson(const QByteArray &json, bool *ok = nullptr);
 
     struct ListItem
