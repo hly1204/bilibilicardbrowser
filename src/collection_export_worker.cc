@@ -27,7 +27,7 @@ CollectionExportWorker::CollectionExportWorker(QObject *parent)
             &CollectionExportWorker::onAssetBagDataReceived);
 }
 
-void CollectionExportWorker::exportAsCsvFile(const QString &file_name, const QString &cookie)
+void CollectionExportWorker::exportToCsvFile(const QString &file_name, const QString &cookie)
 {
     file_->setFileName(file_name);
     if (!file_->open(QIODevice::WriteOnly | QIODevice::Text)) {

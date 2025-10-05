@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 1);
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 2);
     });
-    connect(my_decompose_, &MyDecompose::exportRequested, this, &MainWindow::exportAsCsvFile);
+    connect(my_decompose_, &MyDecompose::exportRequested, this, &MainWindow::exportToCsvFile);
     connect(my_decompose_, &MyDecompose::detailRequested, &manager_,
             qOverload<int, const QString &>(&BilibiliRequestManager::getAssetBag));
     connect(&manager_, &BilibiliRequestManager::myDecomposeDataReceived, this,
@@ -145,7 +145,7 @@ void MainWindow::saveSettings()
     settings_.endGroup();
 }
 
-void MainWindow::exportAsCsvFile()
+void MainWindow::exportToCsvFile()
 {
     const QString file_name = QFileDialog::getSaveFileName(this, u"导出到 CSV 文件"_s,
                                                            qApp->applicationDirPath() % "/a.csv",
@@ -171,7 +171,7 @@ void MainWindow::exportAsCsvFile()
     QString cookie;
     QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::cookie,
                               Qt::BlockingQueuedConnection, qReturnArg(cookie));
-    QMetaObject::invokeMethod(worker, &CollectionExportWorker::exportAsCsvFile, file_name, cookie);
+    QMetaObject::invokeMethod(worker, &CollectionExportWorker::exportToCsvFile, file_name, cookie);
 }
 
 void MainWindow::onSetCookieButtonClicked()

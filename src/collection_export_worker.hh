@@ -20,7 +20,7 @@ public:
     explicit CollectionExportWorker(QObject *parent = nullptr);
 
 public slots:
-    void exportAsCsvFile(const QString &file_name, const QString &cookie);
+    void exportToCsvFile(const QString &file_name, const QString &cookie);
 
 private slots:
     void onMyDecomposeDataReceived(int scene, const QByteArray &json);
