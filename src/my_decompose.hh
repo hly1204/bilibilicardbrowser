@@ -27,6 +27,8 @@ struct MyDecomposeData
     std::optional<QList<ListItem>> list;
 };
 
+Q_DECLARE_METATYPE(MyDecomposeData)
+
 class MyDecompose : public QWidget
 {
     Q_OBJECT

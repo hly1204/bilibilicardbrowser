@@ -99,6 +99,8 @@ struct AssetBagData
     std::optional<QList<LotterySimpleListItem>> lottery_simple_list;
 };
 
+Q_DECLARE_METATYPE(AssetBagData)
+
 class AssetBag : public QWidget
 {
     Q_OBJECT
