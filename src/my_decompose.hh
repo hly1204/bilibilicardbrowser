@@ -40,6 +40,7 @@ signals:
     void refreshRequested();
     void exportRequested();
     void detailRequested(int act_id, const QString &act_name);
+    void likeButtonClicked(int act_id, const QString &act_name);
 
 public slots:
     void clearMyDecomposeData();

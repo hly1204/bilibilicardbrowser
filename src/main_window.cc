@@ -13,6 +13,7 @@
 #include <QDebug>
 
 #include "main_window.hh"
+#include "my_favorite.hh"
 #include "my_decompose.hh"
 #include "asset_bag.hh"
 
@@ -25,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
       manager_(),
       worker_(),
       splitter_(new QSplitter(Qt::Horizontal)),
+      my_collection_(new QTabWidget),
+      my_favorite_(new MyFavorite),
       my_decompose_(new MyDecompose),
       tab_widget_(new QTabWidget),
       set_cookie_button_(new QPushButton(u"设置 Cookie"_s)),
@@ -43,7 +46,10 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
         }
         tab_widget_->removeTab(index);
     });
-    splitter_->addWidget(my_decompose_);
+
+    my_collection_->addTab(my_favorite_, u"喜欢"_s);
+    my_collection_->addTab(my_decompose_, u"拥有"_s);
+    splitter_->addWidget(my_collection_);
     splitter_->addWidget(tab_widget_);
     setCentralWidget(splitter_);
 

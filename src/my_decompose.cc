@@ -2,6 +2,7 @@
 #include <QTableWidgetItem>
 #include <QPushButton>
 #include <QLabel>
+#include <QHBoxLayout>
 #include <QResizeEvent>
 #include <QtMinMax>
 #include <QtLogging>
@@ -128,13 +129,27 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
                                    new QTableWidgetItem(QString::number(data.list->at(i).act_id)));
             table_widget_->setItem(i, scene == 1 ? 2 : 3,
                                    new MyWidgetItem(QString::number(data.list->at(i).card_num)));
+
+            auto box = new QWidget;
+            auto layout = new QHBoxLayout(box);
+            layout->setSpacing(0);
+            layout->setContentsMargins(0, 0, 0, 0);
             auto detail_button = new QPushButton(u"详细"_s);
             connect(detail_button, &QPushButton::clicked, this,
                     [this, act_id = data.list->at(i).act_id,
                      act_name = data.list->at(i).act_name]() {
                         emit detailRequested(act_id, act_name);
                     });
-            table_widget_->setCellWidget(i, 4, detail_button);
+            auto like_button = new QPushButton(u"喜欢"_s);
+            connect(like_button, &QPushButton::clicked, this,
+                    [this, act_id = data.list->at(i).act_id,
+                     act_name = data.list->at(i).act_name]() {
+                        emit likeButtonClicked(act_id, act_name);
+                    });
+            layout->addWidget(detail_button);
+            layout->addWidget(like_button);
+
+            table_widget_->setCellWidget(i, 4, box);
             map_[data.list->at(i).act_id] = i;
         }
     } else {
@@ -158,6 +173,7 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
         // `map_` should not be used from now on...
     }
     table_widget_->resizeColumnsToContents();
+    table_widget_->resizeRowsToContents();
 }
 
 void MyDecompose::disableExportButton()

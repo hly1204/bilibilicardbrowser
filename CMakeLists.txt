@@ -74,6 +74,7 @@ target_sources(bilibilicardbrowser PRIVATE
     src/json_helper.hh
     src/bilibili_request_manager.hh
     src/compress_helper.hh
+    src/my_favorite.hh
     src/my_decompose.hh
     src/asset_bag.hh
     src/collection_export_worker.hh
@@ -84,6 +85,7 @@ target_sources(bilibilicardbrowser PRIVATE
     src/main.cc
     src/bilibili_request_manager.cc
     src/compress_helper.cc
+    src/my_favorite.cc
     src/my_decompose.cc
     src/asset_bag.cc
     src/collection_export_worker.cc

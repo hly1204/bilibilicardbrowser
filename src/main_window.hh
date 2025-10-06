@@ -17,6 +17,7 @@ class QCheckBox;
 class QTabWidget;
 QT_END_NAMESPACE
 
+class MyFavorite;
 class MyDecompose;
 class AssetBag;
 
@@ -58,6 +59,8 @@ private:
     BilibiliRequestManager manager_;
     CollectionExportWorker worker_;
     QSplitter *splitter_;
+    QTabWidget *my_collection_;
+    MyFavorite *my_favorite_;
     MyDecompose *my_decompose_;
     QTabWidget *tab_widget_;
     QPushButton *set_cookie_button_;
