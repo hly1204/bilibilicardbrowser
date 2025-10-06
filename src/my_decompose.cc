@@ -11,7 +11,7 @@
 #include <iterator>
 
 #include "my_decompose.hh"
-#include "json_helper.hh"
+#include "json_helper.hh" // IWYU pragma: keep
 
 using namespace Qt::Literals;
 
