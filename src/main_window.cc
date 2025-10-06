@@ -216,7 +216,7 @@ void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name,
         asset_bag->setAssetBagData(d);
         tab_widget_->setCurrentWidget(asset_bag);
     } else {
-        AssetBag *asset_bag = new AssetBag;
+        auto asset_bag = new AssetBag;
         map_.insert(ActIdAndLotteryId(act_id, lottery_id), asset_bag);
         asset_bag->setInfo(act_id, act_name);
         connect(asset_bag, &AssetBag::refreshRequested, &manager_,

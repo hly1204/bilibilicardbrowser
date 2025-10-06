@@ -230,7 +230,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             if (!item.card_item.has_value()) {
                 continue;
             }
-            QTreeWidgetItem *top_item = new QTreeWidgetItem;
+            auto top_item = new QTreeWidgetItem;
             tree_widget_->addTopLevelItem(top_item);
             tree_widget_->setItemWidget(top_item, 0, new QLabel(item.scarcity()));
             tree_widget_->setItemWidget(top_item, 1, new QLabel(item.card_item->card_name));
@@ -246,7 +246,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
 
             if (item.card_item->card_id_list.has_value()) {
                 for (auto &&card : item.card_item->card_id_list.value()) {
-                    QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
+                    auto sub_item = new QTreeWidgetItem(top_item);
                     tree_widget_->setItemWidget(sub_item, 1, new QLabel(item.card_item->card_name));
                     tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
                     tree_widget_->setItemWidget(
@@ -264,7 +264,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             if (!collect.card_item.has_value() || !collect.card_item->card_type_info.has_value()) {
                 continue;
             }
-            QTreeWidgetItem *top_item = new QTreeWidgetItem;
+            auto top_item = new QTreeWidgetItem;
             tree_widget_->addTopLevelItem(top_item);
             tree_widget_->setItemWidget(top_item, 0, new QLabel(u"典藏卡"_s));
             tree_widget_->setItemWidget(top_item, 1,
@@ -279,7 +279,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
                 for (auto &&card :
                      collect.card_item->card_asset_info->card_item->card_id_list.value()) {
-                    QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
+                    auto sub_item = new QTreeWidgetItem(top_item);
                     tree_widget_->setItemWidget(
                             sub_item, 1, new QLabel(collect.card_item->card_type_info->name));
                     tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
