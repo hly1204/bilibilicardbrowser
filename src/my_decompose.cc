@@ -117,7 +117,7 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
         table_widget_->setRowCount(
                 std::size(data.list.value())); // NOLINT(cppcoreguidelines-narrowing-conversions)
         for (int i = 0; i < static_cast<int>(std::size(data.list.value())); ++i) {
-            QLabel *act_name = new QLabel(
+            auto act_name = new QLabel(
                     u"<a href=\"https://www.bilibili.com/h5/mall/digital-card/home?-Abrowser=live&act_id=%1&hybrid_set_header=2\">%2</a>"_s
                             .arg(data.list->at(i).act_id)
                             .arg(data.list->at(i).act_name));
@@ -128,7 +128,7 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
                                    new QTableWidgetItem(QString::number(data.list->at(i).act_id)));
             table_widget_->setItem(i, scene == 1 ? 2 : 3,
                                    new MyWidgetItem(QString::number(data.list->at(i).card_num)));
-            QPushButton *detail_button = new QPushButton(u"详细"_s);
+            auto detail_button = new QPushButton(u"详细"_s);
             connect(detail_button, &QPushButton::clicked, this,
                     [this, act_id = data.list->at(i).act_id,
                      act_name = data.list->at(i).act_name]() {
