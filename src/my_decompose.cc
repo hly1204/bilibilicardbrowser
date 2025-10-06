@@ -114,8 +114,8 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
     };
 
     if (table_widget_->rowCount() == 0) {
-        table_widget_->setRowCount(
-                std::size(data.list.value())); // NOLINT(cppcoreguidelines-narrowing-conversions)
+        // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions)
+        table_widget_->setRowCount(std::size(data.list.value()));
         for (int i = 0; i < static_cast<int>(std::size(data.list.value())); ++i) {
             auto act_name = new QLabel(
                     u"<a href=\"https://www.bilibili.com/h5/mall/digital-card/home?-Abrowser=live&act_id=%1&hybrid_set_header=2\">%2</a>"_s
