@@ -39,7 +39,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
 
     tab_widget_->setTabsClosable(true);
     connect(tab_widget_, &QTabWidget::tabCloseRequested, this, [this](int index) {
-        AssetBag *asset_bag = qobject_cast<AssetBag *>(tab_widget_->widget(index));
+        auto asset_bag = qobject_cast<AssetBag *>(tab_widget_->widget(index));
         Q_ASSERT(asset_bag != nullptr);
         if (map_.remove(ActIdAndLotteryId(asset_bag->actId(), asset_bag->lotteryId())) != 1) {
             Q_UNREACHABLE();
