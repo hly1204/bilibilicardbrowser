@@ -3,3 +3,5 @@ cmake-build-*/
 .vscode/
 .idea/
 .venv/
+.cache/
+compile_commands.json
