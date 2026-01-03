@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: ucrt-x86_64, sys: UCRT64 }
+          - { name: clang-x86_64, sys: CLANG64 }
 
     steps:
       - uses: actions/checkout@v3
@@ -22,29 +22,170 @@ jobs:
           update: true
           install: >-
             git
+            patch
             mingw-w64-${{ matrix.name }}-toolchain
             mingw-w64-${{ matrix.name }}-cmake
-            mingw-w64-${{ matrix.name }}-clang
+            mingw-w64-${{ matrix.name }}-ninja
             mingw-w64-${{ matrix.name }}-zlib
+            mingw-w64-${{ matrix.name }}-zstd
             mingw-w64-${{ matrix.name }}-brotli
-            mingw-w64-${{ matrix.name }}-qt6
             mingw-w64-${{ matrix.name }}-7zip
+
+      - name: Bundle source code
+        shell: msys2 {0}
+        run: |
+          git rev-parse --short --verify HEAD >commit
+          mkdir -p build && cd build
+          tar -C .. \
+              --transform "s,^,bilibilicardbrowser.src/," \
+              --exclude="build" \
+              --exclude="\.git" \
+              -caf bilibilicardbrowser.src.tar \
+              .
+
+      - name: Import GPG keys
+        shell: msys2 {0}
+        run: |
+          git clone https://github.com/msys2/MSYS2-keyring.git
+          gpg --import MSYS2-keyring/msys2.gpg
+
+      - name: Build qt6-base
+        shell: msys2 {0}
+        run: |
+          wget https://repo.msys2.org/mingw/sources/mingw-w64-qt6-base-6.10.1-1.src.tar.zst
+          wget https://repo.msys2.org/mingw/sources/mingw-w64-qt6-base-6.10.1-1.src.tar.zst.sig
+          gpg --verify \
+              mingw-w64-qt6-base-6.10.1-1.src.tar.zst.sig \
+              mingw-w64-qt6-base-6.10.1-1.src.tar.zst
+          tar -xf mingw-w64-qt6-base-6.10.1-1.src.tar.zst
+          cd mingw-w64-qt6-base
+          tar -xf qtbase-everywhere-src-6.10.1.tar.xz
+          cd qtbase-everywhere-src-6.10.1
+          patch -Nbp1 --input=../001-appending-qt6-to-remove-qt5-conflict.patch
+          patch -Nbp1 --input=../002-fix-qtdocs-helpers-cmake.patch
+          patch -Nbp1 --input=../003-adjust-qmake-conf-mingw.patch
+          patch -Nbp1 --input=../004-qt-6.2.0-win32-g-Add-QMAKE_EXTENSION_IMPORTLIB-defaulting-to-.patch
+          patch -Nbp1 --input=../005-qt-6.7.0-opengl-header.patch
+          patch -Nbp1 --input=../006-qt-6.2.0-dont-add-resource-files-to-qmake-libs.patch
+          patch -Nbp1 --input=../008-freetype-fonts-fallback-dir.patch
+          patch -Nbp1 --input=../009-qfileinfo-undefine-mingw-stat.patch
+          patch -Nbp1 --input=../011-qt6-windeployqt-fixes.patch
+          patch -Nbp1 --input=../010-export-some-constexpr-variables.patch
+          sed -i "s|QMAKE_CFLAGS\([ +]*\)=\(.*\)|QMAKE_CFLAGS\1=\2 -march=nocona -msahf -mtune=generic -Wa,-mbig-obj|g" mkspecs/win32-clang-g++/qmake.conf
+          sed -i "s|QMAKE_CXXFLAGS\([ +]*\)=\(.*\)|QMAKE_CXXFLAGS\1=\2 -march=nocona -msahf -mtune=generic -Wa,-mbig-obj|g" mkspecs/win32-clang-g++/qmake.conf
+          CXXFLAGS+=" -Wno-character-conversion"
+          mkdir build && cd build
+          ../configure \
+              CMAKE_INSTALL_PREFIX=`cygpath -m ${MINGW_PREFIX}` \
+              OPENSSL_USE_STATIC_LIBS=ON \
+              -release \
+              -platform win32-clang-g++ \
+              -c++std c++20 \
+              -force-bundled-libs \
+              -system-zlib \
+              -qt-doubleconversion \
+              -no-cups \
+              -no-dbus \
+              -no-feature-concurrent \
+              -no-feature-imageformatplugin \
+              -no-feature-sql \
+              -no-feature-sqlmodel \
+              -no-feature-testlib \
+              -no-feature-xml \
+              -no-icu \
+              -no-opengl \
+              -no-sql-db2 \
+              -no-sql-ibase \
+              -no-sql-mysql \
+              -no-sql-oci \
+              -no-sql-odbc \
+              -no-sql-psql \
+              -no-sql-sqlite \
+              -openssl-linked \
+              -disable-deprecated-up-to 0x060a00
+          cmake --build . --parallel
+          cmake --install . --strip
+          ln -s ${MINGW_PREFIX}/bin/qmake-qt6 ${MINGW_PREFIX}/bin/qmake6.exe
+          ln -s ${MINGW_PREFIX}/bin/qtpaths-qt6 ${MINGW_PREFIX}/bin/qtpaths6.exe
+          ln -s ${MINGW_PREFIX}/bin/windeployqt-qt6 ${MINGW_PREFIX}/bin/windeployqt6.exe
+          export PREFIX_WIN=$(cygpath -m ${MINGW_PREFIX})
+          find "${MINGW_PREFIX}/share/qt6" -type f \( -name '*.pri' -o -name '*.bat' \) \
+              -exec sed -i -e "s|${PREFIX_WIN}|${MINGW_PREFIX}|g" {} \;
+          find "${MINGW_PREFIX}/bin" -type f \( -name '*.bat' \) \
+              -exec sed -i -e "s|${PREFIX_WIN}|${MINGW_PREFIX}|g" {} \;
+          find "${MINGW_PREFIX}/lib/cmake" -type f \( -name '*.cmake' \) \
+              -exec sed -i -e "s|${PREFIX_WIN}|${MINGW_PREFIX}|g" {} \;
+
+      - name: Build qt6-tools
+        shell: msys2 {0}
+        run: |
+          wget https://repo.msys2.org/mingw/sources/mingw-w64-qt6-tools-6.10.1-1.src.tar.zst
+          wget https://repo.msys2.org/mingw/sources/mingw-w64-qt6-tools-6.10.1-1.src.tar.zst.sig
+          gpg --verify \
+              mingw-w64-qt6-tools-6.10.1-1.src.tar.zst.sig \
+              mingw-w64-qt6-tools-6.10.1-1.src.tar.zst
+          tar -xf mingw-w64-qt6-tools-6.10.1-1.src.tar.zst
+          cd mingw-w64-qt6-tools
+          tar -xf qttools-everywhere-src-6.10.1.tar.xz
+          cd qttools-everywhere-src-6.10.1
+          patch -Nbp1 --input=../001-appending-qt6-to-remove-qt5-conflict.patch
+          mkdir build && cd build
+          cmake --no-warn-unused-cli \
+                -D FEATURE_assistant=OFF \
+                -D FEATURE_clang=ON \
+                -D FEATURE_clang_rtti=ON \
+                -D FEATURE_qdoc=OFF \
+                -D FEATURE_designer=OFF \
+                -D FEATURE_distancefieldgenerator=OFF \
+                -D FEATURE_kmap2qmap=OFF \
+                -D FEATURE_linguist=ON \
+                -D FEATURE_pixeltool=OFF \
+                -D FEATURE_qdbus=OFF \
+                -D FEATURE_qev=OFF \
+                -D FEATURE_qtattributionsscanner=OFF \
+                -D FEATURE_qtdiag=OFF \
+                -D FEATURE_qtplugininfo=OFF \
+                -D FEATURE_fullqthelp=OFF \
+                -D CMAKE_BUILD_TYPE=Release \
+                -D CMAKE_INSTALL_PREFIX=`cygpath -m ${MINGW_PREFIX}` \
+                ..
+          cmake --build . --parallel
+          cmake --install . --strip
+
+      - name: Build qt6-translations
+        shell: msys2 {0}
+        run: |
+          wget https://repo.msys2.org/mingw/sources/mingw-w64-qt6-translations-6.10.1-1.src.tar.zst
+          wget https://repo.msys2.org/mingw/sources/mingw-w64-qt6-translations-6.10.1-1.src.tar.zst.sig
+          gpg --verify \
+              mingw-w64-qt6-translations-6.10.1-1.src.tar.zst.sig \
+              mingw-w64-qt6-translations-6.10.1-1.src.tar.zst
+          tar -xf mingw-w64-qt6-translations-6.10.1-1.src.tar.zst
+          cd mingw-w64-qt6-translations
+          tar -xf qttranslations-everywhere-src-6.10.1.tar.xz
+          cd qttranslations-everywhere-src-6.10.1
+          mkdir build && cd build
+          cmake --no-warn-unused-cli \
+                -D CMAKE_BUILD_TYPE=Release \
+                -D CMAKE_INSTALL_PREFIX=`cygpath -m ${MINGW_PREFIX}` \
+                ..
+          cmake --build . --parallel
+          cmake --install . --strip
 
       - name: Build
         shell: msys2 {0}
         run: |
-          cmake -B build \
+          mkdir -p build && cd build
+          export CXXFLAGS="-fcf-protection=full -fstack-protector-strong -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions"
+          cmake --no-warn-unused-cli \
                 -D CMAKE_BUILD_TYPE=Release \
-                -D CMAKE_C_COMPILER=clang \
-                -D CMAKE_CXX_COMPILER=clang++ \
-                --no-warn-unused-cli \
-                -S .
-          cd build
-          cmake --build .
-          mkdir $PWD/bilibilicardbrowser-${{ matrix.name }}
-          strip -p bilibilicardbrowser.exe -o bilibilicardbrowser-${{ matrix.name }}/bilibilicardbrowser.exe
-          windeployqt6 bilibilicardbrowser-${{ matrix.name }} --release --exclude-plugins qpdf,qsvg --translations en,zh_CN
-          ../scripts/copy_deps bilibilicardbrowser-${{ matrix.name }}
+                ..
+          cmake --build . --parallel
+          cmake --install . \
+                --prefix=${PWD}/bilibilicardbrowser-${{ matrix.name }} \
+                --strip
+          ldd bilibilicardbrowser-${{ matrix.name }}/bin/bilibilicardbrowser.exe | grep ${MSYSTEM_PREFIX} | awk -F ' ' '{print $3}' | xargs -I {} cp -pv {} bilibilicardbrowser-${{ matrix.name }}/bin
+          cp -pv bilibilicardbrowser.src.tar bilibilicardbrowser-${{ matrix.name }}/
           7z a bilibilicardbrowser-${{ matrix.name }}.7z bilibilicardbrowser-${{ matrix.name }}
 
       - name: Upload
