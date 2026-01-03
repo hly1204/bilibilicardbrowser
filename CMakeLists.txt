@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(bilibilicardbrowser VERSION 1.0.3.3 LANGUAGES CXX)
+project(bilibilicardbrowser VERSION 1.0.3.4 LANGUAGES CXX)
 
 # see: https://json.nlohmann.me/integration/cmake/#json_implicitconversions
 set(JSON_ImplicitConversions OFF)
