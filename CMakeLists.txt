@@ -40,28 +40,30 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
     ERROR_QUIET
 )
-execute_process(
-    COMMAND date --iso-8601=seconds
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    OUTPUT_VARIABLE COMPILE_TIME
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-)
+
+if (GIT_COMMIT_HASH STREQUAL "")
+    execute_process(
+        COMMAND cat commit
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if (GIT_COMMIT_HASH STREQUAL "")
+        message(WARNING "Could not determine git commit hash")
+        set(GIT_COMMIT_HASH "Unknown")
+    endif ()
+endif ()
 
 if (GIT_COMMIT_HASH STREQUAL "")
     message(WARNING "Could not determine git commit hash")
     set(GIT_COMMIT_HASH "Unknown")
 endif ()
 
-if (COMPILE_TIME STREQUAL "")
-    set(COMPILE_TIME "Unknown")
-endif ()
-
 target_compile_definitions(bilibilicardbrowser PRIVATE
     # see: https://cmake.org/cmake/help/latest/policy/CMP0043.html#policy:CMP0043
     $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
     GIT_COMMIT_HASH="${GIT_COMMIT_HASH}"
-    COMPILE_TIME="${COMPILE_TIME}"
     APPLICATION_VERSION="${PROJECT_VERSION}"
 )
 

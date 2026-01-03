@@ -30,9 +30,8 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
       set_cookie_button_(new QPushButton(u"设置 Cookie"_s)),
       save_cookie_check_box_(new QCheckBox(u"将 Cookie 存储在本地"_s))
 {
-    setWindowTitle(u"我的小卡片 v%1 (Commit: %2, Date: %3)"_s.arg(qApp->applicationVersion())
-                           .arg(GIT_COMMIT_HASH)
-                           .arg(COMPILE_TIME));
+    setWindowTitle(
+            u"我的小卡片 v%1 (Commit: %2)"_s.arg(qApp->applicationVersion()).arg(GIT_COMMIT_HASH));
 
     tab_widget_->setTabsClosable(true);
     connect(tab_widget_, &QTabWidget::tabCloseRequested, this, [this](int index) {
