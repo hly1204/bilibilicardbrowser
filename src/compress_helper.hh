@@ -11,6 +11,7 @@ QByteArray uncompressZlib(const QByteArray &src, bool *ok = nullptr);
 inline QByteArray uncompress(const QByteArray &src, QAnyStringView encoding, bool *ok = nullptr);
 
 // clang-format off
+[[nodiscard]]
 inline QByteArray uncompress(const QByteArray &src, QAnyStringView encoding, bool *ok)
 {
     if (encoding == "gzip") return uncompressGzip(src, ok);

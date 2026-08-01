@@ -20,9 +20,9 @@ QByteArray uncompressGzip(const QByteArray &src, bool *ok)
     strm.next_in = Z_NULL;
 
     /// \see https://www.zlib.net/manual.html
-    // windowBits can also be greater than 15 for optional gzip encoding. Add 16
-    // to windowBits to write a simple gzip header and trailer around the
-    // compressed data instead of a zlib wrapper.
+    /// windowBits can also be greater than 15 for optional gzip encoding. Add 16
+    /// to windowBits to write a simple gzip header and trailer around the
+    /// compressed data instead of a zlib wrapper.
     if (inflateInit2(&strm, MAX_WBITS | 16) != Z_OK) {
         if (ok)
             *ok = false;
