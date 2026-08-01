@@ -1,24 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(bilibilicardbrowser VERSION 1.0.3.4 LANGUAGES CXX)
+project(bilibilicardbrowser VERSION 1.1.0 LANGUAGES CXX)
 
-# see: https://json.nlohmann.me/integration/cmake/#json_implicitconversions
-set(JSON_ImplicitConversions OFF)
+find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
+add_subdirectory(3rdparty)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
-
+find_package(ZLIB REQUIRED)
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(ZLIB REQUIRED IMPORTED_TARGET zlib)
 pkg_check_modules(BROTLI REQUIRED IMPORTED_TARGET libbrotlicommon libbrotlidec)
-
-include(FetchContent)
-FetchContent_Declare(
-    json
-    DOWNLOAD_EXTRACT_TIMESTAMP ON
-    URL      https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
-    URL_HASH SHA256=42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa
-)
-FetchContent_MakeAvailable(json)
 
 # Enable AUTO_MOC AUTO_UIC AUTO_RCC
 qt_standard_project_setup()
@@ -27,7 +16,6 @@ qt_add_executable(bilibilicardbrowser)
 set_target_properties(bilibilicardbrowser PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,ON,OFF>
-    DEBUG_POSTFIX d
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
@@ -55,21 +43,10 @@ if (GIT_COMMIT_HASH STREQUAL "")
     endif ()
 endif ()
 
-if (GIT_COMMIT_HASH STREQUAL "")
-    message(WARNING "Could not determine git commit hash")
-    set(GIT_COMMIT_HASH "Unknown")
-endif ()
-
 target_compile_definitions(bilibilicardbrowser PRIVATE
     # see: https://cmake.org/cmake/help/latest/policy/CMP0043.html#policy:CMP0043
-    $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
     GIT_COMMIT_HASH="${GIT_COMMIT_HASH}"
     APPLICATION_VERSION="${PROJECT_VERSION}"
-)
-
-target_compile_options(bilibilicardbrowser PRIVATE
-    $<$<CXX_COMPILER_ID:MSVC>:/W4 /WX>
-    $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -Wpedantic -Werror>
 )
 
 target_sources(bilibilicardbrowser PRIVATE
@@ -93,11 +70,9 @@ target_sources(bilibilicardbrowser PRIVATE
 )
 
 target_link_libraries(bilibilicardbrowser PRIVATE
-    Qt6::Core
-    Qt6::Gui
     Qt6::Widgets
     Qt6::Network
-    PkgConfig::ZLIB
+    ZLIB::ZLIB
     PkgConfig::BROTLI
     nlohmann_json::nlohmann_json
 )
@@ -105,6 +80,7 @@ target_link_libraries(bilibilicardbrowser PRIVATE
 install(TARGETS bilibilicardbrowser
     BUNDLE DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 qt_generate_deploy_app_script(
@@ -112,6 +88,7 @@ qt_generate_deploy_app_script(
     OUTPUT_SCRIPT deploy_script
     NO_UNSUPPORTED_PLATFORM_ERROR
     DEPLOY_TOOL_OPTIONS
+        "--no-system-d3d-compiler"
         "--exclude-plugins qpdf,qsvg"
         "--translations en,zh_CN"
 )
