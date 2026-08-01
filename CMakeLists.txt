@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(bilibilicardbrowser VERSION 1.1.1 LANGUAGES CXX)
+project(bilibilicardbrowser VERSION 1.2.0 LANGUAGES CXX)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
 add_subdirectory(3rdparty)

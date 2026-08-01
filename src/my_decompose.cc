@@ -25,8 +25,7 @@ void from_json(const nlohmann::json &j, MyDecomposeData::ListItem &item)
 void from_json(const nlohmann::json &j, MyDecomposeData &data)
 {
     data.list.reset();
-    auto &&list = j.at("list");
-    if (list.is_array()) {
+    if (auto &&list = j.at("list"); list.is_array()) {
         list.get_to(data.list.emplace());
     }
 }

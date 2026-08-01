@@ -2,8 +2,12 @@
 #include <QResizeEvent>
 #include <QtLogging>
 #include <QDebug>
+#include <QGroupBox>
+#include <QHBoxLayout>
 
 #include <nlohmann/json.hpp>
+
+#include <algorithm>
 
 #include "asset_bag.hh"
 #include "json_helper.hh" // IWYU pragma: keep
@@ -25,13 +29,20 @@ void from_json(const nlohmann::json &j, AssetBagData::ListItem::CardItem &item)
     j.at("card_img").get_to(item.card_img);
     j.at("card_type").get_to(item.card_type);
     item.card_id_list.reset();
-    auto &&card_id_list = j.at("card_id_list");
-    if (card_id_list.is_array()) {
+    if (auto &&card_id_list = j.at("card_id_list"); card_id_list.is_array()) {
         card_id_list.get_to(item.card_id_list.emplace());
     }
     j.at("total_cnt").get_to(item.total_cnt);
     j.at("total_cnt_show").get_to(item.total_cnt_show);
     j.at("holding_rate").get_to(item.holding_rate);
+    item.video_list.reset();
+    if (auto &&video_list = j.at("video_list"); video_list.is_array()) {
+        video_list.get_to(item.video_list.emplace());
+    }
+    item.video_list_download.reset();
+    if (auto &&video_list_download = j.at("video_list_download"); video_list_download.is_array()) {
+        video_list_download.get_to(item.video_list_download.emplace());
+    }
     j.at("card_scarcity").get_to(item.card_scarcity);
     j.at("is_limited_card").get_to(item.is_limited_card);
 }
@@ -41,8 +52,7 @@ void from_json(const nlohmann::json &j, AssetBagData::ListItem &item)
     j.at("item_type").get_to(item.item_type);
     j.at("item_scarcity").get_to(item.item_scarcity);
     item.card_item.reset();
-    auto &&card_item = j.at("card_item");
-    if (!card_item.is_null()) {
+    if (auto &&card_item = j.at("card_item"); !card_item.is_null()) {
         card_item.get_to(item.card_item.emplace());
     }
 }
@@ -57,12 +67,10 @@ void from_json(const nlohmann::json &j, AssetBagData::CollectListItem::CardItem:
 
 void from_json(const nlohmann::json &j, AssetBagData::CollectListItem::CardItem &item)
 {
-    auto &&card_type_info = j.at("card_type_info");
-    if (!card_type_info.is_null()) {
+    if (auto &&card_type_info = j.at("card_type_info"); !card_type_info.is_null()) {
         card_type_info.get_to(item.card_type_info.emplace());
     }
-    auto &&card_asset_info = j.at("card_asset_info");
-    if (!card_asset_info.is_null()) {
+    if (auto &&card_asset_info = j.at("card_asset_info"); !card_asset_info.is_null()) {
         card_asset_info.get_to(item.card_asset_info.emplace());
     }
 }
@@ -82,8 +90,7 @@ void from_json(const nlohmann::json &j, AssetBagData::CollectListItem &item)
     j.at("has_redeemed_cnt").get_to(item.has_redeemed_cnt);
     j.at("effective_forever").get_to(item.effective_forever);
     item.card_item.reset();
-    auto &&card_item = j.at("card_item");
-    if (!card_item.is_null()) {
+    if (auto &&card_item = j.at("card_item"); !card_item.is_null()) {
         card_item.get_to(item.card_item.emplace());
     }
 }
@@ -99,18 +106,15 @@ void from_json(const nlohmann::json &j, AssetBagData &data)
     j.at("total_item_cnt").get_to(data.total_item_cnt);
     j.at("owned_item_cnt").get_to(data.owned_item_cnt);
     data.item_list.reset();
-    auto &&item_list = j.at("item_list");
-    if (item_list.is_array()) {
+    if (auto &&item_list = j.at("item_list"); item_list.is_array()) {
         item_list.get_to(data.item_list.emplace());
     }
     data.collect_list.reset();
-    auto &&collect_list = j.at("collect_list");
-    if (collect_list.is_array()) {
+    if (auto &&collect_list = j.at("collect_list"); collect_list.is_array()) {
         collect_list.get_to(data.collect_list.emplace());
     }
     data.lottery_simple_list.reset();
-    auto &&lottery_simple_list = j.at("lottery_simple_list");
-    if (lottery_simple_list.is_array()) {
+    if (auto &&lottery_simple_list = j.at("lottery_simple_list"); lottery_simple_list.is_array()) {
         lottery_simple_list.get_to(data.lottery_simple_list.emplace());
     }
 }
@@ -181,9 +185,8 @@ AssetBag::AssetBag(QWidget *parent, Qt::WindowFlags f)
     connect(&expand_all_button_, &QPushButton::clicked, &tree_widget_, &QTreeWidget::expandAll);
     connect(&collapse_all_button_, &QPushButton::clicked, &tree_widget_, &QTreeWidget::collapseAll);
 
-    const QList header_list = {
-        u"稀有度"_s, u"名称"_s, u"编号/总数"_s, u"持有率"_s, u"限量卡"_s, u"其他状态"_s,
-    };
+    const QList header_list = { u"稀有度"_s, u"名称"_s,     u"编号／总数"_s, u"持有率"_s,
+                                u"限量卡"_s, u"其他状态"_s, u"视频下载"_s };
 
     // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions)
     tree_widget_.setColumnCount(std::size(header_list));
@@ -219,16 +222,88 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             u"拥有/总计: %1/%2"_s.arg(data.owned_item_cnt).arg(data.total_item_cnt));
     item_cnt_label_.adjustSize();
 
-    // 可以抽到的卡片
-    if (data.item_list.has_value()) {
-        for (auto &&item : data.item_list.value()) {
-            if (!item.card_item.has_value()) {
-                continue;
+    QMap<long long, QTreeWidgetItem *> items;
+    for (int i = 0; i < tree_widget_.topLevelItemCount(); ++i) {
+        QTreeWidgetItem *top_item = tree_widget_.topLevelItem(i);
+        items.insert(top_item->data(0, Qt::ItemDataRole::UserRole).toLongLong(), top_item);
+    }
+
+    for (auto &&item : data.item_list.value()) {
+        if (!item.card_item.has_value()) {
+            continue;
+        }
+
+        auto found = items.constFind(item.card_item->card_type_id);
+        if (found != items.constEnd()) {
+            QTreeWidgetItem *top_item = found.value();
+            QLabel *owned_count_label =
+                    qobject_cast<QLabel *>(tree_widget_.itemWidget(top_item, 0));
+            owned_count_label->setText(
+                    item.scarcity()
+                    % u" (%1)"_s.arg(item.card_item->card_id_list.has_value()
+                                             ? static_cast<int>(std::size(
+                                                       item.card_item->card_id_list.value()))
+                                             : 0));
+            QLabel *total_count_label =
+                    qobject_cast<QLabel *>(tree_widget_.itemWidget(top_item, 2));
+            total_count_label->setText(QString::number(item.card_item->total_cnt));
+            QLabel *holding_rate_label =
+                    qobject_cast<QLabel *>(tree_widget_.itemWidget(top_item, 3));
+            holding_rate_label->setText(
+                    QString::number(item.card_item->holding_rate / 100.0, 'g', 2) % '%');
+
+            if (item.card_item->card_id_list.has_value()) {
+                QMap<long long, QTreeWidgetItem *> sub_items;
+                for (int i = 0; i < top_item->childCount(); ++i) {
+                    QTreeWidgetItem *sub_item = top_item->child(i);
+                    sub_items.insert(sub_item->data(0, Qt::ItemDataRole::UserRole).toLongLong(),
+                                     sub_item);
+                }
+
+                for (auto &&card : item.card_item->card_id_list.value()) {
+                    auto found = sub_items.constFind(card.card_id);
+                    if (found != sub_items.constEnd()) {
+                        QTreeWidgetItem *sub_item = found.value();
+                        sub_items.erase(found);
+                        QLabel *status_label =
+                                qobject_cast<QLabel *>(tree_widget_.itemWidget(sub_item, 5));
+                        status_label->setText(card.card_right.is_transfer != 0 ? u"转赠中"_s
+                                                                               : u""_s);
+                    } else {
+                        QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
+                        sub_item->setData(0, Qt::ItemDataRole::UserRole, card.card_id);
+                        tree_widget_.setItemWidget(sub_item, 1,
+                                                   new QLabel(item.card_item->card_name));
+                        tree_widget_.setItemWidget(sub_item, 2, new QLabel(card.card_no));
+                        tree_widget_.setItemWidget(
+                                sub_item, 5,
+                                new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
+                    }
+                }
+                qDeleteAll(sub_items);
+            } else {
+                qDeleteAll(top_item->takeChildren());
             }
+        } else {
             QTreeWidgetItem *top_item = new QTreeWidgetItem;
+            top_item->setData(0, Qt::ItemDataRole::UserRole, item.card_item->card_type_id);
             tree_widget_.addTopLevelItem(top_item);
-            tree_widget_.setItemWidget(top_item, 0, new QLabel(item.scarcity()));
-            tree_widget_.setItemWidget(top_item, 1, new QLabel(item.card_item->card_name));
+            tree_widget_.setItemWidget(
+                    top_item, 0,
+                    new QLabel(item.scarcity()
+                               % u" (%1)"_s.arg(
+                                       item.card_item->card_id_list.has_value()
+                                               ? static_cast<int>(std::size(
+                                                         item.card_item->card_id_list.value()))
+                                               : 0)));
+            {
+                QLabel *card_name_label = new QLabel(
+                        u"<a href=\"%1\">%2</a>"_s.arg(item.card_item->card_img.toString())
+                                .arg(item.card_item->card_name));
+                card_name_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+                card_name_label->setOpenExternalLinks(true);
+                tree_widget_.setItemWidget(top_item, 1, card_name_label);
+            }
             tree_widget_.setItemWidget(top_item, 2,
                                        new QLabel(QString::number(item.card_item->total_cnt)));
             tree_widget_.setItemWidget(
@@ -242,28 +317,135 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             if (item.card_item->card_id_list.has_value()) {
                 for (auto &&card : item.card_item->card_id_list.value()) {
                     QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
+                    sub_item->setData(0, Qt::ItemDataRole::UserRole, card.card_id);
                     tree_widget_.setItemWidget(sub_item, 1, new QLabel(item.card_item->card_name));
                     tree_widget_.setItemWidget(sub_item, 2, new QLabel(card.card_no));
                     tree_widget_.setItemWidget(
                             sub_item, 5,
                             new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
                 }
-                top_item->setExpanded(true);
+            }
+
+            if (item.card_item->video_list_download.has_value()) {
+                QGroupBox *group_box = new QGroupBox;
+                QHBoxLayout *layout = new QHBoxLayout(group_box);
+                layout->setContentsMargins(-1, 0, -1, 0);
+                {
+                    QList<QString> video_list;
+                    for (auto &&video : item.card_item->video_list_download.value()) {
+                        video_list << video.toString();
+                    }
+                    std::sort(std::begin(video_list), std::end(video_list));
+                    auto last = std::unique(std::begin(video_list), std::end(video_list));
+                    video_list.erase(last, std::end(video_list));
+                    for (qsizetype i = 0; i < video_list.size(); ++i) {
+                        QLabel *video_label =
+                                new QLabel(u"<a href=\"%1\">视频 %2 (水印)</a>"_s.arg(video_list[i])
+                                                   .arg(i + 1));
+                        video_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+                        video_label->setOpenExternalLinks(true);
+                        layout->addWidget(video_label);
+                    }
+                }
+                {
+                    QList<QString> video_list;
+                    for (auto &&video : item.card_item->video_list.value()) {
+                        video_list << video.toString();
+                    }
+                    std::sort(std::begin(video_list), std::end(video_list));
+                    auto last = std::unique(std::begin(video_list), std::end(video_list));
+                    video_list.erase(last, std::end(video_list));
+                    for (qsizetype i = 0; i < video_list.size(); ++i) {
+                        QLabel *video_label = new QLabel(
+                                u"<a href=\"%1\">视频 %2</a>"_s.arg(video_list[i]).arg(i + 1));
+                        video_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+                        video_label->setOpenExternalLinks(true);
+                        layout->addWidget(video_label);
+                    }
+                }
+                tree_widget_.setItemWidget(top_item, 6, group_box);
             }
         }
     }
 
     // 典藏卡
-    if (data.collect_list.has_value()) {
-        for (auto &&collect : data.collect_list.value()) {
-            if (!collect.card_item.has_value() || !collect.card_item->card_type_info.has_value()) {
-                continue;
+    for (auto &&collect : data.collect_list.value()) {
+        if (!collect.card_item.has_value() || !collect.card_item->card_type_info.has_value()) {
+            continue;
+        }
+
+        auto found = items.constFind(collect.card_item->card_asset_info->card_item->card_type_id);
+        if (found != items.constEnd()) {
+            QTreeWidgetItem *top_item = found.value();
+            QLabel *owned_count_label =
+                    qobject_cast<QLabel *>(tree_widget_.itemWidget(top_item, 0));
+            owned_count_label->setText(u"典藏卡 (%1)"_s.arg(
+                    collect.card_item->card_asset_info->card_item->card_id_list.has_value()
+                            ? static_cast<int>(std::size(collect.card_item->card_asset_info
+                                                                 ->card_item->card_id_list.value()))
+                            : 0));
+            QLabel *total_count_label =
+                    qobject_cast<QLabel *>(tree_widget_.itemWidget(top_item, 2));
+            total_count_label->setText(
+                    QString::number(collect.card_item->card_asset_info->card_item->total_cnt));
+
+            if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
+                QMap<long long, QTreeWidgetItem *> sub_items;
+                for (int i = 0; i < top_item->childCount(); ++i) {
+                    QTreeWidgetItem *sub_item = top_item->child(i);
+                    sub_items.insert(sub_item->data(0, Qt::ItemDataRole::UserRole).toLongLong(),
+                                     sub_item);
+                }
+
+                for (auto &&card :
+                     collect.card_item->card_asset_info->card_item->card_id_list.value()) {
+                    auto found = sub_items.find(card.card_id);
+                    if (found != sub_items.constEnd()) {
+                        QTreeWidgetItem *sub_item = found.value();
+                        sub_items.erase(found);
+                        QLabel *status_label =
+                                qobject_cast<QLabel *>(tree_widget_.itemWidget(sub_item, 5));
+                        status_label->setText(card.card_right.is_transfer != 0 ? u"转赠中"_s
+                                                                               : u""_s);
+                    } else {
+                        QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
+                        sub_item->setData(0, Qt::ItemDataRole::UserRole, card.card_id);
+                        tree_widget_.setItemWidget(
+                                sub_item, 1, new QLabel(collect.card_item->card_type_info->name));
+                        tree_widget_.setItemWidget(sub_item, 2, new QLabel(card.card_no));
+                        tree_widget_.setItemWidget(
+                                sub_item, 5,
+                                new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
+                    }
+                }
+
+                qDeleteAll(sub_items);
+            } else {
+                qDeleteAll(top_item->takeChildren());
             }
+        } else {
             QTreeWidgetItem *top_item = new QTreeWidgetItem;
+            top_item->setData(0, Qt::ItemDataRole::UserRole,
+                              collect.card_item->card_asset_info->card_item->card_type_id);
             tree_widget_.addTopLevelItem(top_item);
-            tree_widget_.setItemWidget(top_item, 0, new QLabel(u"典藏卡"_s));
-            tree_widget_.setItemWidget(top_item, 1,
-                                       new QLabel(collect.card_item->card_type_info->name));
+            tree_widget_.setItemWidget(
+                    top_item, 0,
+                    new QLabel(u"典藏卡 (%1)"_s.arg(
+                            collect.card_item->card_asset_info->card_item->card_id_list.has_value()
+                                    ? static_cast<int>(
+                                              std::size(collect.card_item->card_asset_info
+                                                                ->card_item->card_id_list.value()))
+                                    : 0)));
+            {
+                QLabel *card_name_label = new QLabel(
+                        u"<a href=\"%1\">%2</a>"_s
+                                .arg(collect.card_item->card_asset_info->card_item->card_img
+                                             .toString())
+                                .arg(collect.card_item->card_asset_info->card_item->card_name));
+                card_name_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+                card_name_label->setOpenExternalLinks(true);
+                tree_widget_.setItemWidget(top_item, 1, card_name_label);
+            }
             tree_widget_.setItemWidget(
                     top_item, 2,
                     new QLabel(QString::number(
@@ -275,6 +457,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                 for (auto &&card :
                      collect.card_item->card_asset_info->card_item->card_id_list.value()) {
                     QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
+                    sub_item->setData(0, Qt::ItemDataRole::UserRole, card.card_id);
                     tree_widget_.setItemWidget(sub_item, 1,
                                                new QLabel(collect.card_item->card_type_info->name));
                     tree_widget_.setItemWidget(sub_item, 2, new QLabel(card.card_no));
@@ -282,7 +465,48 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                             sub_item, 5,
                             new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
                 }
-                top_item->setExpanded(true);
+            }
+
+            if (collect.card_item->card_asset_info->card_item->video_list_download.has_value()) {
+                QGroupBox *group_box = new QGroupBox;
+                QHBoxLayout *layout = new QHBoxLayout(group_box);
+                layout->setContentsMargins(-1, 0, -1, 0);
+                {
+                    QList<QString> video_list;
+                    for (auto &&video : collect.card_item->card_asset_info->card_item
+                                                ->video_list_download.value()) {
+                        video_list << video.toString();
+                    }
+                    std::sort(std::begin(video_list), std::end(video_list));
+                    auto last = std::unique(std::begin(video_list), std::end(video_list));
+                    video_list.erase(last, std::end(video_list));
+                    for (qsizetype i = 0; i < video_list.size(); ++i) {
+                        QLabel *video_label =
+                                new QLabel(u"<a href=\"%1\">视频 %2 (水印)</a>"_s.arg(video_list[i])
+                                                   .arg(i + 1));
+                        video_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+                        video_label->setOpenExternalLinks(true);
+                        layout->addWidget(video_label);
+                    }
+                }
+                {
+                    QList<QString> video_list;
+                    for (auto &&video :
+                         collect.card_item->card_asset_info->card_item->video_list.value()) {
+                        video_list << video.toString();
+                    }
+                    std::sort(std::begin(video_list), std::end(video_list));
+                    auto last = std::unique(std::begin(video_list), std::end(video_list));
+                    video_list.erase(last, std::end(video_list));
+                    for (qsizetype i = 0; i < video_list.size(); ++i) {
+                        QLabel *video_label = new QLabel(
+                                u"<a href=\"%1\">视频 %2</a>"_s.arg(video_list[i]).arg(i + 1));
+                        video_label->setTextInteractionFlags(Qt::TextBrowserInteraction);
+                        video_label->setOpenExternalLinks(true);
+                        layout->addWidget(video_label);
+                    }
+                }
+                tree_widget_.setItemWidget(top_item, 6, group_box);
             }
         }
     }

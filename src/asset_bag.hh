@@ -47,6 +47,8 @@ struct AssetBagData
             int total_cnt;
             QString total_cnt_show;
             int holding_rate; // 除以 100 显示百分比
+            std::optional<QList<QUrl>> video_list;
+            std::optional<QList<QUrl>> video_list_download;
             int card_scarcity;
             int is_limited_card;
         };
