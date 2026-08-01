@@ -15,7 +15,6 @@ qt_add_executable(bilibilicardbrowser)
 
 set_target_properties(bilibilicardbrowser PROPERTIES
     POSITION_INDEPENDENT_CODE ON
-    WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,ON,OFF>
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
