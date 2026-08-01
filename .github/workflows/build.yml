@@ -8,19 +8,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: x86_64, sys: MINGW64 }
-          - { name: ucrt-x86_64, sys: UCRT64 }
-          - { name: clang-x86_64, sys: CLANG64 }
+          - { name: x86_64, sys: mingw64 }
+          - { name: ucrt-x86_64, sys: ucrt64 }
+          - { name: clang-x86_64, sys: clang64 }
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.sys }}
           update: true
           install: >-
-            git
+            mingw-w64-${{ matrix.name }}-git
             mingw-w64-${{ matrix.name }}-toolchain
             mingw-w64-${{ matrix.name }}-cmake
             mingw-w64-${{ matrix.name }}-zlib
