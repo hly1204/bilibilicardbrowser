@@ -203,7 +203,6 @@ void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name,
     auto iter = map_.constFind(ActIdAndLotteryId(act_id, lottery_id));
     if (iter != map_.constEnd() && !iter.value().isNull()) {
         AssetBag *asset_bag = iter.value();
-        asset_bag->clearAssetBagData();
         asset_bag->setAssetBagData(d);
         tab_widget_.setCurrentWidget(asset_bag);
     } else {
