@@ -5,19 +5,17 @@
 #include <QSettings>
 #include <QThread>
 #include <QString>
+#include <QSplitter>
+#include <QPushButton>
+#include <QCheckBox>
+#include <QTabWidget>
 #include <QMap>
+#include <QPointer>
 
 #include "bilibili_request_manager.hh"
 #include "collection_export_worker.hh"
+#include "my_decompose.hh"
 
-QT_BEGIN_NAMESPACE
-class QSplitter;
-class QPushButton;
-class QCheckBox;
-class QTabWidget;
-QT_END_NAMESPACE
-
-class MyDecompose;
 class AssetBag;
 
 class MainWindow : public QMainWindow
@@ -57,12 +55,12 @@ private:
     QThread network_thread_;
     BilibiliRequestManager manager_;
     CollectionExportWorker worker_;
-    QSplitter *splitter_;
-    MyDecompose *my_decompose_;
-    QTabWidget *tab_widget_;
-    QPushButton *set_cookie_button_;
-    QCheckBox *save_cookie_check_box_;
-    QMap<ActIdAndLotteryId, AssetBag *> map_;
+    QSplitter splitter_;
+    MyDecompose my_decompose_;
+    QTabWidget tab_widget_;
+    QPushButton set_cookie_button_;
+    QCheckBox save_cookie_check_box_;
+    QMap<ActIdAndLotteryId, QPointer<AssetBag>> map_;
 };
 
 // clang-format off

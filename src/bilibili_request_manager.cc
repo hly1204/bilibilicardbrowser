@@ -1,4 +1,3 @@
-#include <QNetworkAccessManager>
 #include <QHttpHeaders>
 #include <QUrl>
 #include <QUrlQuery>
@@ -14,11 +13,11 @@ using namespace Qt::Literals;
 
 BilibiliRequestManager::BilibiliRequestManager(QObject *parent)
     : QObject(parent),
-      manager_(new QNetworkAccessManager(this)),
+      manager_(this),
       factory_(QUrl(u"https://api.bilibili.com"_s)),
       user_agent_(u"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
-                  "Chrome/139.0.0.0 "
+                  "Chrome/150.0.0.0 "
                   "Safari/537.36"_s)
 {
     // 默认构造不会配置 cookie，使用默认的 UA
@@ -27,7 +26,12 @@ BilibiliRequestManager::BilibiliRequestManager(QObject *parent)
     headers.append(QHttpHeaders::WellKnownHeader::UserAgent, user_agent_);
     factory_.setCommonHeaders(headers);
 
-    connect(manager_, &QNetworkAccessManager::sslErrors, this, &BilibiliRequestManager::sslErrors);
+    connect(&manager_, &QNetworkAccessManager::sslErrors, this, &BilibiliRequestManager::sslErrors);
+    // see: https://doc.qt.io/qt-6/qnetworkaccessmanager.html#connectToHostEncrypted
+    QSslConfiguration conf = QSslConfiguration::defaultConfiguration();
+    conf.setAllowedNextProtocols(conf.allowedNextProtocols()
+                                 << QSslConfiguration::ALPNProtocolHTTP2);
+    manager_.connectToHostEncrypted(u"https://api.bilibili.com"_s, 443, conf);
 }
 
 void BilibiliRequestManager::setUserAgent(const QString &user_agent)
@@ -81,7 +85,7 @@ void BilibiliRequestManager::getMyDecompose(int scene)
                                                              { u"csrf"_s, csrf_ },
                                                              { u"scene"_s, QString::number(scene) },
                                                      });
-    QNetworkReply *reply = manager_->get(request);
+    QNetworkReply *reply = manager_.get(request);
     connect(reply, &QNetworkReply::errorOccurred, this, [this](QNetworkReply::NetworkError error) {
         emit errorOccurred(qobject_cast<QNetworkReply *>(sender()), error);
     });
@@ -125,7 +129,7 @@ void BilibiliRequestManager::getAssetBag(int act_id, const QString &act_name, in
                                            { u"lottery_id"_s, QString::number(lottery_id) },
                                            { u"ruid"_s, QString::number(ruid) },
                                    });
-    QNetworkReply *reply = manager_->get(request);
+    QNetworkReply *reply = manager_.get(request);
     connect(reply, &QNetworkReply::errorOccurred, this, [this](QNetworkReply::NetworkError error) {
         emit errorOccurred(qobject_cast<QNetworkReply *>(sender()), error);
     });
@@ -167,7 +171,7 @@ void BilibiliRequestManager::getImage(long long card_type_id, const QUrl &url)
         headers.append(QHttpHeaders::WellKnownHeader::UserAgent, user_agent_);
         request.setHeaders(headers);
     }
-    QNetworkReply *reply = manager_->get(request);
+    QNetworkReply *reply = manager_.get(request);
     connect(reply, &QNetworkReply::errorOccurred, this, [this](QNetworkReply::NetworkError error) {
         emit errorOccurred(qobject_cast<QNetworkReply *>(sender()), error);
     });

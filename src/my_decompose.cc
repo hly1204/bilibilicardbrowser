@@ -11,7 +11,7 @@
 #include <iterator>
 
 #include "my_decompose.hh"
-#include "json_helper.hh"
+#include "json_helper.hh" // IWYU pragma: keep
 
 using namespace Qt::Literals;
 
@@ -68,31 +68,31 @@ MyDecomposeData MyDecomposeData::fromJson(const QByteArray &json, bool *ok)
 
 MyDecompose::MyDecompose(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f),
-      table_widget_(new QTableWidget(this)),
-      refresh_button_(new QPushButton(u"刷新"_s, this)),
-      export_button_(new QPushButton(u"导出"_s, this))
+      table_widget_(this),
+      refresh_button_(u"刷新"_s, this),
+      export_button_(u"导出"_s, this)
 {
-    refresh_button_->adjustSize();
-    export_button_->adjustSize();
-    table_widget_->setColumnCount(5);
-    table_widget_->setHorizontalHeaderLabels(QStringList{
-            u"收藏集名称"_s,
-            u"Activity ID"_s,
-            u"卡片数量"_s,
-            u"卡片种类数"_s,
-            u"操作"_s,
-    });
+    refresh_button_.adjustSize();
+    export_button_.adjustSize();
 
-    connect(refresh_button_, &QPushButton::clicked, this, &MyDecompose::refreshRequested);
-    connect(export_button_, &QPushButton::clicked, this, &MyDecompose::exportRequested);
+    const QList header_list = {
+        u"收藏集名称"_s, u"Activity ID"_s, u"卡片数量"_s, u"卡片种类数"_s, u"操作"_s,
+    };
+
+    // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions)
+    table_widget_.setColumnCount(std::size(header_list));
+    table_widget_.setHorizontalHeaderLabels(header_list);
+
+    connect(&refresh_button_, &QPushButton::clicked, this, &MyDecompose::refreshRequested);
+    connect(&export_button_, &QPushButton::clicked, this, &MyDecompose::exportRequested);
 }
 
 void MyDecompose::clearMyDecomposeData()
 {
-    table_widget_->setRowCount(0);
+    table_widget_.setRowCount(0);
     map_.clear();
     // disable sorting before setting data
-    table_widget_->setSortingEnabled(false);
+    table_widget_.setSortingEnabled(false);
 }
 
 void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
@@ -113,8 +113,8 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
         }
     };
 
-    if (table_widget_->rowCount() == 0) {
-        table_widget_->setRowCount(
+    if (table_widget_.rowCount() == 0) {
+        table_widget_.setRowCount(
                 std::size(data.list.value())); // NOLINT(cppcoreguidelines-narrowing-conversions)
         for (int i = 0; i < static_cast<int>(std::size(data.list.value())); ++i) {
             QLabel *act_name = new QLabel(
@@ -123,18 +123,18 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
                             .arg(data.list->at(i).act_name));
             act_name->setTextInteractionFlags(Qt::TextBrowserInteraction);
             act_name->setOpenExternalLinks(true);
-            table_widget_->setCellWidget(i, 0, act_name);
-            table_widget_->setItem(i, 1,
-                                   new QTableWidgetItem(QString::number(data.list->at(i).act_id)));
-            table_widget_->setItem(i, scene == 1 ? 2 : 3,
-                                   new MyWidgetItem(QString::number(data.list->at(i).card_num)));
+            table_widget_.setCellWidget(i, 0, act_name);
+            table_widget_.setItem(i, 1,
+                                  new QTableWidgetItem(QString::number(data.list->at(i).act_id)));
+            table_widget_.setItem(i, scene == 1 ? 2 : 3,
+                                  new MyWidgetItem(QString::number(data.list->at(i).card_num)));
             QPushButton *detail_button = new QPushButton(u"详细"_s);
             connect(detail_button, &QPushButton::clicked, this,
                     [this, act_id = data.list->at(i).act_id,
                      act_name = data.list->at(i).act_name]() {
                         emit detailRequested(act_id, act_name);
                     });
-            table_widget_->setCellWidget(i, 4, detail_button);
+            table_widget_.setCellWidget(i, 4, detail_button);
             map_[data.list->at(i).act_id] = i;
         }
     } else {
@@ -144,39 +144,38 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
                 qWarning() << "Unknown act_id:" << data.list->at(i).act_id;
                 continue;
             }
-            if (QTableWidgetItem *item = table_widget_->item(iter.value(), scene == 1 ? 2 : 3)) {
+            if (QTableWidgetItem *item = table_widget_.item(iter.value(), scene == 1 ? 2 : 3)) {
                 Q_ASSERT(dynamic_cast<MyWidgetItem *>(item) != nullptr);
                 item->setText(QString::number(data.list->at(i).card_num));
             } else {
-                table_widget_->setItem(
-                        iter.value(), scene == 1 ? 2 : 3,
-                        new MyWidgetItem(QString::number(data.list->at(i).card_num)));
+                table_widget_.setItem(iter.value(), scene == 1 ? 2 : 3,
+                                      new MyWidgetItem(QString::number(data.list->at(i).card_num)));
             }
         }
         // enable sorting after setting all data
-        table_widget_->setSortingEnabled(true);
+        table_widget_.setSortingEnabled(true);
         // `map_` should not be used from now on...
     }
-    table_widget_->resizeColumnsToContents();
+    table_widget_.resizeColumnsToContents();
 }
 
 void MyDecompose::disableExportButton()
 {
-    export_button_->setDisabled(true);
+    export_button_.setDisabled(true);
 }
 
 void MyDecompose::enableExportButton()
 {
-    export_button_->setEnabled(true);
+    export_button_.setEnabled(true);
 }
 
 void MyDecompose::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     const QSize size = event->size();
-    table_widget_->resize(size.width(),
-                          size.height() - 2
-                                  - qMax(refresh_button_->height(), export_button_->height()));
-    refresh_button_->move(table_widget_->geometry().bottomLeft() + QPoint(0, 1));
-    export_button_->move(refresh_button_->geometry().topRight() + QPoint(5, 0));
+    table_widget_.resize(size.width(),
+                         size.height() - 2
+                                 - qMax(refresh_button_.height(), export_button_.height()));
+    refresh_button_.move(table_widget_.geometry().bottomLeft() + QPoint(0, 1));
+    export_button_.move(refresh_button_.geometry().topRight() + QPoint(5, 0));
 }

@@ -7,10 +7,7 @@
 #include <QUrl>
 #include <QNetworkRequestFactory>
 #include <QNetworkReply>
-
-QT_BEGIN_NAMESPACE
-class QNetworkAccessManager;
-QT_END_NAMESPACE
+#include <QNetworkAccessManager>
 
 class BilibiliRequestManager : public QObject
 {
@@ -52,7 +49,7 @@ signals:
     void sslErrors(QNetworkReply *reply, const QList<QSslError> &errors);
 
 private:
-    QNetworkAccessManager *manager_;
+    QNetworkAccessManager manager_;
     QNetworkRequestFactory factory_;
     QString user_agent_;
     QString cookie_;

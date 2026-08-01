@@ -1,7 +1,4 @@
-#include <QLabel>
-#include <QTreeWidget>
 #include <QTreeWidgetItem>
-#include <QPushButton>
 #include <QResizeEvent>
 #include <QtLogging>
 #include <QDebug>
@@ -9,7 +6,7 @@
 #include <nlohmann/json.hpp>
 
 #include "asset_bag.hh"
-#include "json_helper.hh"
+#include "json_helper.hh" // IWYU pragma: keep
 
 using namespace Qt::Literals;
 
@@ -157,42 +154,40 @@ AssetBag::AssetBag(QWidget *parent, Qt::WindowFlags f)
     : QWidget(parent, f),
       act_id_(),
       lottery_id_(),
-      link_label_(new QLabel(u"未知收藏集"_s, this)),
-      item_cnt_label_(new QLabel(u"拥有/总计: %1/%2"_s.arg(0).arg(1), this)),
-      tree_widget_(new QTreeWidget(this)),
-      refresh_button_(new QPushButton(u"刷新"_s, this)),
-      expand_all_button_(new QPushButton(u"展开全部"_s, this)),
-      collapse_all_button_(new QPushButton(u"折叠全部"_s, this))
+      link_label_(u"未知收藏集"_s, this),
+      item_cnt_label_(u"拥有/总计: %1/%2"_s.arg(0).arg(1), this),
+      tree_widget_(this),
+      refresh_button_(u"刷新"_s, this),
+      expand_all_button_(u"展开全部"_s, this),
+      collapse_all_button_(u"折叠全部"_s, this)
 {
-    link_label_->adjustSize();
-    item_cnt_label_->adjustSize();
-    item_cnt_label_->move(link_label_->geometry().topRight() + QPoint(10, 0));
-    refresh_button_->adjustSize();
-    expand_all_button_->adjustSize();
-    collapse_all_button_->adjustSize();
-    link_label_->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    link_label_->setOpenExternalLinks(true);
-    tree_widget_->move(link_label_->geometry().bottomLeft() + QPoint(0, 1));
+    link_label_.adjustSize();
+    item_cnt_label_.adjustSize();
+    item_cnt_label_.move(link_label_.geometry().topRight() + QPoint(10, 0));
+    refresh_button_.adjustSize();
+    expand_all_button_.adjustSize();
+    collapse_all_button_.adjustSize();
+    link_label_.setTextInteractionFlags(Qt::TextBrowserInteraction);
+    link_label_.setOpenExternalLinks(true);
+    tree_widget_.move(link_label_.geometry().bottomLeft() + QPoint(0, 1));
 
-    connect(refresh_button_, &QPushButton::clicked, this, [this]() {
+    connect(&refresh_button_, &QPushButton::clicked, this, [this]() {
         if (act_id_ == 0) {
             qWarning() << "Use setInfo() first.";
             return;
         }
         emit refreshRequested(act_id_, act_name_, lottery_id_, lottery_name_);
     });
-    connect(expand_all_button_, &QPushButton::clicked, tree_widget_, &QTreeWidget::expandAll);
-    connect(collapse_all_button_, &QPushButton::clicked, tree_widget_, &QTreeWidget::collapseAll);
+    connect(&expand_all_button_, &QPushButton::clicked, &tree_widget_, &QTreeWidget::expandAll);
+    connect(&collapse_all_button_, &QPushButton::clicked, &tree_widget_, &QTreeWidget::collapseAll);
 
-    tree_widget_->setColumnCount(6);
-    tree_widget_->setHeaderLabels(QStringList{
-            u"稀有度"_s,
-            u"名称"_s,
-            u"编号/总数"_s,
-            u"持有率"_s,
-            u"限量卡"_s,
-            u"其他状态"_s,
-    });
+    const QList header_list = {
+        u"稀有度"_s, u"名称"_s, u"编号/总数"_s, u"持有率"_s, u"限量卡"_s, u"其他状态"_s,
+    };
+
+    // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions)
+    tree_widget_.setColumnCount(std::size(header_list));
+    tree_widget_.setHeaderLabels(header_list);
 }
 
 void AssetBag::setInfo(int act_id, int lottery_id, const QString &act_name,
@@ -204,25 +199,25 @@ void AssetBag::setInfo(int act_id, int lottery_id, const QString &act_name,
     lottery_name_ = lottery_name;
 
     // 若 lottery_id = 0 则 lottery_name = "全部奖池"
-    link_label_->setText(
+    link_label_.setText(
             u"<a href=\"https://www.bilibili.com/h5/mall/digital-card/home?-Abrowser=live&act_id=%1&hybrid_set_header=2&lottery_id=%2\">%3</a>"_s
                     .arg(act_id)
                     .arg(lottery_id)
                     .arg(act_name % " - " % lottery_name));
-    link_label_->adjustSize();
-    item_cnt_label_->move(link_label_->geometry().topRight() + QPoint(10, 0));
+    link_label_.adjustSize();
+    item_cnt_label_.move(link_label_.geometry().topRight() + QPoint(10, 0));
 }
 
 void AssetBag::clearAssetBagData()
 {
-    tree_widget_->clear();
+    tree_widget_.clear();
 }
 
 void AssetBag::setAssetBagData(const AssetBagData &data)
 {
-    item_cnt_label_->setText(
+    item_cnt_label_.setText(
             u"拥有/总计: %1/%2"_s.arg(data.owned_item_cnt).arg(data.total_item_cnt));
-    item_cnt_label_->adjustSize();
+    item_cnt_label_.adjustSize();
 
     // 可以抽到的卡片
     if (data.item_list.has_value()) {
@@ -231,25 +226,25 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                 continue;
             }
             QTreeWidgetItem *top_item = new QTreeWidgetItem;
-            tree_widget_->addTopLevelItem(top_item);
-            tree_widget_->setItemWidget(top_item, 0, new QLabel(item.scarcity()));
-            tree_widget_->setItemWidget(top_item, 1, new QLabel(item.card_item->card_name));
-            tree_widget_->setItemWidget(top_item, 2,
-                                        new QLabel(QString::number(item.card_item->total_cnt)));
-            tree_widget_->setItemWidget(
+            tree_widget_.addTopLevelItem(top_item);
+            tree_widget_.setItemWidget(top_item, 0, new QLabel(item.scarcity()));
+            tree_widget_.setItemWidget(top_item, 1, new QLabel(item.card_item->card_name));
+            tree_widget_.setItemWidget(top_item, 2,
+                                       new QLabel(QString::number(item.card_item->total_cnt)));
+            tree_widget_.setItemWidget(
                     top_item, 3,
                     new QLabel(QString::number(item.card_item->holding_rate / 100.0, 'g', 2)
                                % '%'));
-            tree_widget_->setItemWidget(
+            tree_widget_.setItemWidget(
                     top_item, 4,
                     new QLabel(item.card_item->is_limited_card != 0 ? u"限量"_s : u""_s));
 
             if (item.card_item->card_id_list.has_value()) {
                 for (auto &&card : item.card_item->card_id_list.value()) {
                     QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
-                    tree_widget_->setItemWidget(sub_item, 1, new QLabel(item.card_item->card_name));
-                    tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
-                    tree_widget_->setItemWidget(
+                    tree_widget_.setItemWidget(sub_item, 1, new QLabel(item.card_item->card_name));
+                    tree_widget_.setItemWidget(sub_item, 2, new QLabel(card.card_no));
+                    tree_widget_.setItemWidget(
                             sub_item, 5,
                             new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
                 }
@@ -265,25 +260,25 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                 continue;
             }
             QTreeWidgetItem *top_item = new QTreeWidgetItem;
-            tree_widget_->addTopLevelItem(top_item);
-            tree_widget_->setItemWidget(top_item, 0, new QLabel(u"典藏卡"_s));
-            tree_widget_->setItemWidget(top_item, 1,
-                                        new QLabel(collect.card_item->card_type_info->name));
-            tree_widget_->setItemWidget(
+            tree_widget_.addTopLevelItem(top_item);
+            tree_widget_.setItemWidget(top_item, 0, new QLabel(u"典藏卡"_s));
+            tree_widget_.setItemWidget(top_item, 1,
+                                       new QLabel(collect.card_item->card_type_info->name));
+            tree_widget_.setItemWidget(
                     top_item, 2,
                     new QLabel(QString::number(
                             collect.card_item->card_asset_info->card_item->total_cnt)));
-            tree_widget_->setItemWidget(top_item, 3, new QLabel(u"/"_s));
-            tree_widget_->setItemWidget(top_item, 4, new QLabel(u"/"_s));
+            tree_widget_.setItemWidget(top_item, 3, new QLabel(u"/"_s));
+            tree_widget_.setItemWidget(top_item, 4, new QLabel(u"/"_s));
 
             if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
                 for (auto &&card :
                      collect.card_item->card_asset_info->card_item->card_id_list.value()) {
                     QTreeWidgetItem *sub_item = new QTreeWidgetItem(top_item);
-                    tree_widget_->setItemWidget(
-                            sub_item, 1, new QLabel(collect.card_item->card_type_info->name));
-                    tree_widget_->setItemWidget(sub_item, 2, new QLabel(card.card_no));
-                    tree_widget_->setItemWidget(
+                    tree_widget_.setItemWidget(sub_item, 1,
+                                               new QLabel(collect.card_item->card_type_info->name));
+                    tree_widget_.setItemWidget(sub_item, 2, new QLabel(card.card_no));
+                    tree_widget_.setItemWidget(
                             sub_item, 5,
                             new QLabel(card.card_right.is_transfer != 0 ? u"转赠中"_s : u""_s));
                 }
@@ -292,17 +287,17 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
         }
     }
 
-    tree_widget_->resizeColumnToContents(1);
-    tree_widget_->resizeColumnToContents(2);
+    tree_widget_.resizeColumnToContents(1);
+    tree_widget_.resizeColumnToContents(2);
 }
 
 void AssetBag::resizeEvent(QResizeEvent *event)
 {
     QWidget::resizeEvent(event);
     const QSize size = event->size();
-    tree_widget_->resize(size.width(),
-                         size.height() - 2 - link_label_->height() - 2 - refresh_button_->height());
-    refresh_button_->move(tree_widget_->geometry().bottomLeft() + QPoint(0, 1));
-    expand_all_button_->move(refresh_button_->geometry().topRight() + QPoint(1, 0));
-    collapse_all_button_->move(expand_all_button_->geometry().topRight() + QPoint(1, 0));
+    tree_widget_.resize(size.width(),
+                        size.height() - 2 - link_label_.height() - 2 - refresh_button_.height());
+    refresh_button_.move(tree_widget_.geometry().bottomLeft() + QPoint(0, 1));
+    expand_all_button_.move(refresh_button_.geometry().topRight() + QPoint(1, 0));
+    collapse_all_button_.move(expand_all_button_.geometry().topRight() + QPoint(1, 0));
 }

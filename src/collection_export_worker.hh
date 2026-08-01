@@ -4,10 +4,9 @@
 #include <QObject>
 #include <QString>
 #include <QScopedPointer>
+#include <QFile>
 
-QT_BEGIN_NAMESPACE
-class QFile;
-QT_END_NAMESPACE
+#include "bilibili_request_manager.hh"
 
 struct MyDecomposeData;
 class BilibiliRequestManager;
@@ -36,8 +35,8 @@ protected:
     void timerEvent(QTimerEvent *event) override;
 
 private:
-    BilibiliRequestManager *manager_;
-    QFile *file_;
+    BilibiliRequestManager manager_;
+    QFile file_;
     Qt::TimerId timer_id_;
     int current_;
     int total_;

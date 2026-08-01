@@ -1,4 +1,3 @@
-#include <QFile>
 #include <QTextStream>
 #include <QtLogging>
 #include <QDebug>
@@ -15,34 +14,34 @@ using namespace Qt::Literals;
 
 CollectionExportWorker::CollectionExportWorker(QObject *parent)
     : QObject(parent),
-      manager_(new BilibiliRequestManager(this)),
-      file_(new QFile(this)),
+      manager_(this),
+      file_(this),
       timer_id_(Qt::TimerId::Invalid),
       current_(),
       total_()
 {
-    connect(manager_, &BilibiliRequestManager::myDecomposeDataReceived, this,
+    connect(&manager_, &BilibiliRequestManager::myDecomposeDataReceived, this,
             &CollectionExportWorker::onMyDecomposeDataReceived);
-    connect(manager_, &BilibiliRequestManager::assetBagDataReceived, this,
+    connect(&manager_, &BilibiliRequestManager::assetBagDataReceived, this,
             &CollectionExportWorker::onAssetBagDataReceived);
 }
 
 void CollectionExportWorker::exportToCsvFile(const QString &file_name, const QString &cookie)
 {
-    if (file_->isOpen()) {
-        file_->close();
+    if (file_.isOpen()) {
+        file_.close();
     }
-    file_->setFileName(file_name);
-    if (!file_->open(QIODevice::WriteOnly | QIODevice::Text)) {
+    file_.setFileName(file_name);
+    if (!file_.open(QIODevice::WriteOnly | QIODevice::Text)) {
         qWarning() << "Unable to open file:" << file_name;
         return;
     }
 
-    QTextStream out(file_);
+    QTextStream out(&file_);
     out << QStringList{ u"收藏集名"_s, u"卡名"_s, u"稀有度"_s, u"编号"_s, u"是否限量"_s, }.join(',') << '\n';
 
-    manager_->setCookie(cookie);
-    manager_->getMyDecompose(1);
+    manager_.setCookie(cookie);
+    manager_.getMyDecompose(1);
 }
 
 void CollectionExportWorker::stopAction()
@@ -50,8 +49,8 @@ void CollectionExportWorker::stopAction()
     if (timer_id_ != Qt::TimerId::Invalid) {
         killTimer(timer_id_);
     }
-    if (file_->isOpen()) {
-        file_->close();
+    if (file_.isOpen()) {
+        file_.close();
     }
 
     current_ = 0;
@@ -63,7 +62,7 @@ void CollectionExportWorker::onMyDecomposeDataReceived([[maybe_unused]] int scen
                                                        const QByteArray &json)
 {
     // file is closed
-    if (!file_->isOpen()) {
+    if (!file_.isOpen()) {
         return;
     }
 
@@ -103,19 +102,19 @@ void CollectionExportWorker::onAssetBagDataReceived([[maybe_unused]] int act_id,
     const AssetBagData d = AssetBagData::fromJson(json, &ok);
 
     if (!ok) {
-        if (file_->isOpen()) {
-            file_->close();
+        if (file_.isOpen()) {
+            file_.close();
         }
         emit finished();
         return;
     }
 
-    if (!file_->isOpen()) {
+    if (!file_.isOpen()) {
         return;
     }
 
     {
-        QTextStream out(file_);
+        QTextStream out(&file_);
 
         if (d.item_list.has_value()) {
             for (auto &&item : d.item_list.value()) {
@@ -158,8 +157,8 @@ void CollectionExportWorker::onAssetBagDataReceived([[maybe_unused]] int act_id,
     emit progressChanged(++current_, total_);
     if (current_ == total_) {
         // close file when finished
-        if (file_->isOpen()) {
-            file_->close();
+        if (file_.isOpen()) {
+            file_.close();
         }
         emit finished();
     }
@@ -169,8 +168,8 @@ void CollectionExportWorker::timerEvent(QTimerEvent *event)
 {
     if (timer_id_ == event->id()) {
         if (!my_decompose_data_->list->empty()) {
-            manager_->getAssetBag(my_decompose_data_->list->back().act_id,
-                                  my_decompose_data_->list->back().act_name);
+            manager_.getAssetBag(my_decompose_data_->list->back().act_id,
+                                 my_decompose_data_->list->back().act_name);
             my_decompose_data_->list->pop_back();
         }
         if (my_decompose_data_->list->empty()) {

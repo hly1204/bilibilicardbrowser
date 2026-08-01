@@ -7,14 +7,11 @@
 #include <QList>
 #include <QUrl>
 #include <QDateTime>
+#include <QLabel>
+#include <QTreeWidget>
+#include <QPushButton>
 
 #include <optional>
-
-QT_BEGIN_NAMESPACE
-class QLabel;
-class QTreeWidget;
-class QPushButton;
-QT_END_NAMESPACE
 
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
 struct AssetBagData
@@ -138,12 +135,12 @@ private:
     int lottery_id_; ///< 若为零则为全部奖池，否则为单奖池
     QString act_name_;
     QString lottery_name_;
-    QLabel *link_label_;
-    QLabel *item_cnt_label_;
-    QTreeWidget *tree_widget_;
-    QPushButton *refresh_button_;
-    QPushButton *expand_all_button_;
-    QPushButton *collapse_all_button_;
+    QLabel link_label_;
+    QLabel item_cnt_label_;
+    QTreeWidget tree_widget_;
+    QPushButton refresh_button_;
+    QPushButton expand_all_button_;
+    QPushButton collapse_all_button_;
 };
 
 // clang-format off

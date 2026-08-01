@@ -5,13 +5,10 @@
 #include <QByteArray>
 #include <QList>
 #include <QMap>
+#include <QTableWidget>
+#include <QPushButton>
 
 #include <optional>
-
-QT_BEGIN_NAMESPACE
-class QTableWidget;
-class QPushButton;
-QT_END_NAMESPACE
 
 struct MyDecomposeData
 {
@@ -51,9 +48,9 @@ protected:
     void resizeEvent(QResizeEvent *event) override;
 
 private:
-    QTableWidget *table_widget_;
-    QPushButton *refresh_button_;
-    QPushButton *export_button_;
+    QTableWidget table_widget_;
+    QPushButton refresh_button_;
+    QPushButton export_button_;
     QMap<int, int> map_; // {act_id, row_id}
 };
 

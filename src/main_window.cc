@@ -21,39 +21,31 @@ using namespace Qt::Literals;
 MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       settings_(u"conf.ini"_s, QSettings::Format::IniFormat),
-      network_thread_(),
-      manager_(),
-      worker_(),
-      splitter_(new QSplitter(Qt::Horizontal)),
-      my_decompose_(new MyDecompose),
-      tab_widget_(new QTabWidget),
-      set_cookie_button_(new QPushButton(u"设置 Cookie"_s)),
-      save_cookie_check_box_(new QCheckBox(u"将 Cookie 存储在本地"_s))
+      splitter_(Qt::Horizontal),
+      set_cookie_button_(u"设置 Cookie"_s),
+      save_cookie_check_box_(u"将 Cookie 存储在本地"_s)
 {
     setWindowTitle(
             u"我的小卡片 v%1 (Commit: %2)"_s.arg(qApp->applicationVersion()).arg(GIT_COMMIT_HASH));
 
-    tab_widget_->setTabsClosable(true);
-    connect(tab_widget_, &QTabWidget::tabCloseRequested, this, [this](int index) {
-        AssetBag *asset_bag = qobject_cast<AssetBag *>(tab_widget_->widget(index));
-        Q_ASSERT(asset_bag != nullptr);
-        if (map_.remove(ActIdAndLotteryId(asset_bag->actId(), asset_bag->lotteryId())) != 1) {
-            Q_UNREACHABLE();
-        }
-        tab_widget_->removeTab(index);
+    tab_widget_.setTabsClosable(true);
+    connect(&tab_widget_, &QTabWidget::tabCloseRequested, this, [this](int index) {
+        AssetBag *asset_bag = qobject_cast<AssetBag *>(tab_widget_.widget(index));
+        asset_bag->deleteLater();
     });
-    splitter_->addWidget(my_decompose_);
-    splitter_->addWidget(tab_widget_);
-    setCentralWidget(splitter_);
+    splitter_.addWidget(&my_decompose_);
+    splitter_.addWidget(&tab_widget_);
+    setCentralWidget(&splitter_);
 
-    connect(set_cookie_button_, &QPushButton::clicked, this, &MainWindow::onSetCookieButtonClicked);
-    connect(my_decompose_, &MyDecompose::refreshRequested, this, [this]() {
-        my_decompose_->clearMyDecomposeData();
+    connect(&set_cookie_button_, &QPushButton::clicked, this,
+            &MainWindow::onSetCookieButtonClicked);
+    connect(&my_decompose_, &MyDecompose::refreshRequested, this, [this]() {
+        my_decompose_.clearMyDecomposeData();
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 1);
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::getMyDecompose, 2);
     });
-    connect(my_decompose_, &MyDecompose::exportRequested, this, &MainWindow::exportToCsvFile);
-    connect(my_decompose_, &MyDecompose::detailRequested, &manager_,
+    connect(&my_decompose_, &MyDecompose::exportRequested, this, &MainWindow::exportToCsvFile);
+    connect(&my_decompose_, &MyDecompose::detailRequested, &manager_,
             qOverload<int, const QString &>(&BilibiliRequestManager::getAssetBag));
     connect(&manager_, &BilibiliRequestManager::myDecomposeDataReceived, this,
             &MainWindow::onMyDecomposeDataReceived);
@@ -62,8 +54,8 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
 
     {
         QStatusBar *status_bar = statusBar();
-        status_bar->addPermanentWidget(set_cookie_button_);
-        status_bar->addPermanentWidget(save_cookie_check_box_);
+        status_bar->addPermanentWidget(&set_cookie_button_);
+        status_bar->addPermanentWidget(&save_cookie_check_box_);
     }
 
     manager_.moveToThread(&network_thread_);
@@ -72,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent, Qt::WindowFlags flags)
             [this](int current, int total) {
                 statusBar()->showMessage(u"导出中... %1/%2"_s.arg(current).arg(total));
             });
-    connect(&worker_, &CollectionExportWorker::finished, my_decompose_,
+    connect(&worker_, &CollectionExportWorker::finished, &my_decompose_,
             &MyDecompose::enableExportButton);
     connect(&worker_, &CollectionExportWorker::finished, this,
             [this]() { statusBar()->showMessage(u"导出完成"_s, 3000); });
@@ -106,12 +98,12 @@ void MainWindow::loadSettings()
 
     settings_.beginGroup("Splitter");
     if (settings_.contains("splitter_size")) {
-        splitter_->restoreState(settings_.value("splitter_size").toByteArray());
+        splitter_.restoreState(settings_.value("splitter_size").toByteArray());
     }
     settings_.endGroup();
 
     settings_.beginGroup("Network");
-    save_cookie_check_box_->setChecked(settings_.value("save_cookie", false).toBool());
+    save_cookie_check_box_.setChecked(settings_.value("save_cookie", false).toBool());
     if (settings_.contains("cookie")) {
         const QString cookie = settings_.value("cookie").toString();
         if (!cookie.isEmpty()) {
@@ -136,12 +128,12 @@ void MainWindow::saveSettings()
     settings_.endGroup();
 
     settings_.beginGroup("Splitter");
-    settings_.setValue("splitter_size", splitter_->saveState());
+    settings_.setValue("splitter_size", splitter_.saveState());
     settings_.endGroup();
 
     settings_.beginGroup("Network");
-    settings_.setValue("save_cookie", save_cookie_check_box_->isChecked());
-    if (save_cookie_check_box_->isChecked()) {
+    settings_.setValue("save_cookie", save_cookie_check_box_.isChecked());
+    if (save_cookie_check_box_.isChecked()) {
         QString cookie;
         QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::cookie,
                                   Qt::BlockingQueuedConnection, qReturnArg(cookie));
@@ -164,7 +156,7 @@ void MainWindow::exportToCsvFile()
         return;
     }
 
-    my_decompose_->disableExportButton();
+    my_decompose_.disableExportButton();
     QString cookie;
     QMetaObject::invokeMethod(&manager_, &BilibiliRequestManager::cookie,
                               Qt::BlockingQueuedConnection, qReturnArg(cookie));
@@ -194,7 +186,7 @@ void MainWindow::onMyDecomposeDataReceived(int scene, const QByteArray &json)
         return;
     }
 
-    my_decompose_->setMyDecomposeData(scene, d);
+    my_decompose_.setMyDecomposeData(scene, d);
 }
 
 void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name,
@@ -209,20 +201,20 @@ void MainWindow::onAssetBagDataReceived(int act_id, const QString &act_name,
     }
 
     auto iter = map_.constFind(ActIdAndLotteryId(act_id, lottery_id));
-    if (iter != map_.constEnd()) {
+    if (iter != map_.constEnd() && !iter.value().isNull()) {
         AssetBag *asset_bag = iter.value();
         asset_bag->clearAssetBagData();
         asset_bag->setAssetBagData(d);
-        tab_widget_->setCurrentWidget(asset_bag);
+        tab_widget_.setCurrentWidget(asset_bag);
     } else {
         AssetBag *asset_bag = new AssetBag;
-        map_.insert(ActIdAndLotteryId(act_id, lottery_id), asset_bag);
+        map_.insert(ActIdAndLotteryId(act_id, lottery_id), QPointer(asset_bag));
         asset_bag->setInfo(act_id, act_name);
         connect(asset_bag, &AssetBag::refreshRequested, &manager_,
                 qOverload<int, const QString &, int>(&BilibiliRequestManager::getAssetBag));
         asset_bag->setAssetBagData(d);
-        tab_widget_->addTab(asset_bag, act_name);
-        tab_widget_->setCurrentWidget(asset_bag);
+        tab_widget_.addTab(asset_bag, act_name);
+        tab_widget_.setCurrentWidget(asset_bag);
     }
 }
 
