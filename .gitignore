@@ -1,7 +1,7 @@
 build*/
 cmake-build-*/
 
-html/
+docs/
 
 .vscode/
 .idea/
