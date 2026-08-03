@@ -25,8 +25,12 @@ jobs:
           msystem: ucrt64
           update: true
           install: >-
+            mingw-w64-ucrt-x86_64-git
             mingw-w64-ucrt-x86_64-toolchain
             mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-zlib
+            mingw-w64-ucrt-x86_64-brotli
+            mingw-w64-ucrt-x86_64-qt6
             mingw-w64-ucrt-x86_64-clang
             mingw-w64-ucrt-x86_64-clang-libs
             mingw-w64-ucrt-x86_64-llvm
