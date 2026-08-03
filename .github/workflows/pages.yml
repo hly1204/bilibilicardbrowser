@@ -25,17 +25,40 @@ jobs:
           msystem: ucrt64
           update: true
           install: >-
-            mingw-w64-ucrt-x86_64-doxygen
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-clang
+            mingw-w64-ucrt-x86_64-clang-libs
+            mingw-w64-ucrt-x86_64-llvm
+            mingw-w64-ucrt-x86_64-llvm-libs
+
+      - name: Build CodeBrowser
+        run: |
+          git clone git@github.com:hly1204/codebrowser.git
+          cmake -B build-codebrowser -D CMAKE_BUILD_TYPE=Release -S codebrowser
+          cmake --build build-codebrowser
+          cmake --install build-codebrowser --strip --prefix=${MSYSTEM_PREFIX}
 
       - name: Generate docs
         id: build
-        run: doxygen
+        run: |
+          cmake -B cmake-build-release \
+                -D CMAKE_BUILD_TYPE=Release \
+                -D CMAKE_WIN32_EXECUTABLE=ON \
+                -D CMAKE_CXX_FLAGS_RELEASE="-DNDEBUG -O2 -march=nocona -msahf -mtune=generic -fcf-protection=full -fstack-protector-strong -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions" \
+                -S .
+          cmake --build cmake-build-release
+          codebrowser_generator -p bilibilicardbrowser:`cygpath -m $PWD` \
+                                -b `cygpath -m $PWD`/cmake-build-release -a \
+                                -o html/code/
+          codebrowser_indexgenerator -o html/code/
+          cp -r ${MSYSTEM_PREFIX}/share/woboq/data html/code/
 
       - name: Upload
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: html/html/
+          path: html/code/
 
   deploy:
     environment:
