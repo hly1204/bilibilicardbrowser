@@ -56,15 +56,15 @@ jobs:
           cmake --build cmake-build-release
           codebrowser_generator -p bilibilicardbrowser:`cygpath -m ${PWD}` \
                                 -b `cygpath -m ${PWD}`/cmake-build-release -a \
-                                -o html/code/
-          codebrowser_indexgenerator -o html/code/
-          cp -r ${MSYSTEM_PREFIX}/share/woboq/data html/code/
+                                -o html/code
+          codebrowser_indexgenerator -o html/code
+          cp -r ${MSYSTEM_PREFIX}/share/woboq/data html
 
       - name: Upload
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: html/code/
+          path: html
 
   deploy:
     environment:
