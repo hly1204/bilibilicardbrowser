@@ -40,9 +40,12 @@ jobs:
       - name: Build CodeBrowser
         run: |
           git clone https://github.com/hly1204/codebrowser.git
-          cmake -B build-codebrowser -D CMAKE_BUILD_TYPE=Release -S codebrowser
+          INCLUDE=`cygpath -m ${MSYSTEM_PREFIX}/include` cmake -B build-codebrowser \
+                                                               -D CMAKE_BUILD_TYPE=Release \
+                                                               -S codebrowser \
+                                                               -D CMAKE_INSTALL_PREFIX=${MSYSTEM_PREFIX}
           cmake --build build-codebrowser
-          cmake --install build-codebrowser --strip --prefix=${MSYSTEM_PREFIX}
+          cmake --install build-codebrowser --strip
 
       - name: Generate docs
         id: build
