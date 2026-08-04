@@ -23,7 +23,6 @@ int main(int argc, char *argv[])
     QTranslator t;
     if (t.load(QLocale(QLocale::Chinese), u"qt"_s, u"_"_s,
                QLibraryInfo::path(QLibraryInfo::TranslationsPath))) {
-        // NOLINTNEXTLINE(readability-static-accessed-through-instance)
         app.installTranslator(&t);
     } else {
         qWarning() << "Failed to load translations";
