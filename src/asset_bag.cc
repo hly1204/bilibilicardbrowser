@@ -222,10 +222,10 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             u"拥有/总计: %1/%2"_s.arg(data.owned_item_cnt).arg(data.total_item_cnt));
     item_cnt_label_.adjustSize();
 
-    QMap<long long, QTreeWidgetItem *> items;
+    QMap<qint64, QTreeWidgetItem *> items;
     for (int i = 0; i < tree_widget_.topLevelItemCount(); ++i) {
         QTreeWidgetItem *top_item = tree_widget_.topLevelItem(i);
-        items.insert(top_item->data(0, Qt::ItemDataRole::UserRole).toLongLong(), top_item);
+        items.insert(top_item->data(0, Qt::ItemDataRole::UserRole).value<qint64>(), top_item);
     }
 
     for (auto &&item : data.item_list.value()) {
@@ -253,10 +253,10 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                     QString::number(item.card_item->holding_rate / 100.0, 'g', 2) % '%');
 
             if (item.card_item->card_id_list.has_value()) {
-                QMap<long long, QTreeWidgetItem *> sub_items;
+                QMap<qint64, QTreeWidgetItem *> sub_items;
                 for (int i = 0; i < top_item->childCount(); ++i) {
                     QTreeWidgetItem *sub_item = top_item->child(i);
-                    sub_items.insert(sub_item->data(0, Qt::ItemDataRole::UserRole).toLongLong(),
+                    sub_items.insert(sub_item->data(0, Qt::ItemDataRole::UserRole).value<qint64>(),
                                      sub_item);
                 }
 
@@ -390,10 +390,10 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                     QString::number(collect.card_item->card_asset_info->card_item->total_cnt));
 
             if (collect.card_item->card_asset_info->card_item->card_id_list.has_value()) {
-                QMap<long long, QTreeWidgetItem *> sub_items;
+                QMap<qint64, QTreeWidgetItem *> sub_items;
                 for (int i = 0; i < top_item->childCount(); ++i) {
                     QTreeWidgetItem *sub_item = top_item->child(i);
-                    sub_items.insert(sub_item->data(0, Qt::ItemDataRole::UserRole).toLongLong(),
+                    sub_items.insert(sub_item->data(0, Qt::ItemDataRole::UserRole).value<qint64>(),
                                      sub_item);
                 }
 

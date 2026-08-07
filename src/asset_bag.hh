@@ -23,7 +23,7 @@ struct AssetBagData
 
     struct CardIdListItem
     {
-        long long card_id;
+        qint64 card_id;
         QString card_no;
         int status;
         struct
@@ -39,7 +39,7 @@ struct AssetBagData
 
         struct CardItem
         {
-            long long card_type_id;
+            qint64 card_type_id;
             QString card_name;
             QUrl card_img;
             int card_type;
@@ -76,7 +76,7 @@ struct AssetBagData
         {
             struct CardTypeInfo
             {
-                long long id;
+                qint64 id;
                 QString name;
                 QUrl overview_image;
                 int scarcity;

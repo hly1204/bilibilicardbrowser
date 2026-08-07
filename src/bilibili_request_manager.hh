@@ -36,13 +36,13 @@ public slots:
         getAssetBag(act_id, act_name, lottery_id, 0);
     }
     void getAssetBag(int act_id, const QString &act_name, int lottery_id, int ruid);
-    void getImage(long long card_type_id, const QUrl &url);
+    void getImage(qint64 card_type_id, const QUrl &url);
 
 signals:
     void myDecomposeDataReceived(int scene, const QByteArray &json);
     void assetBagDataReceived(int act_id, const QString &act_name, int lottery_id, int ruid,
                               const QByteArray &json);
-    void imageDataReceived(long long card_type_id, const QUrl &url, const QByteArray &image);
+    void imageDataReceived(qint64 card_type_id, const QUrl &url, const QByteArray &image);
 
 signals:
     void errorOccurred(QNetworkReply *reply, QNetworkReply::NetworkError error);

@@ -161,7 +161,7 @@ void BilibiliRequestManager::getAssetBag(int act_id, const QString &act_name, in
     });
 }
 
-void BilibiliRequestManager::getImage(long long card_type_id, const QUrl &url)
+void BilibiliRequestManager::getImage(qint64 card_type_id, const QUrl &url)
 {
     QNetworkRequest request(url);
     {
