@@ -88,8 +88,7 @@ void CollectionExportWorker::onMyDecomposeDataReceived([[maybe_unused]] int scen
     }
 
     current_ = 0;
-    // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions)
-    total_ = my_decompose_data_->list->size();
+    total_ = static_cast<int>(my_decompose_data_->list->size());
 }
 
 void CollectionExportWorker::onAssetBagDataReceived([[maybe_unused]] int act_id,

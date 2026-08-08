@@ -188,8 +188,7 @@ AssetBag::AssetBag(QWidget *parent, Qt::WindowFlags f)
     const QList header_list = { u"稀有度"_s, u"名称"_s,     u"编号／总数"_s, u"持有率"_s,
                                 u"限量卡"_s, u"其他状态"_s, u"视频下载"_s };
 
-    // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions)
-    tree_widget_.setColumnCount(std::size(header_list));
+    tree_widget_.setColumnCount(static_cast<int>(std::size(header_list)));
     tree_widget_.setHeaderLabels(header_list);
 }
 
@@ -233,8 +232,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             continue;
         }
 
-        auto found = items.constFind(item.card_item->card_type_id);
-        if (found != items.constEnd()) {
+        if (auto found = items.constFind(item.card_item->card_type_id); found != items.constEnd()) {
             QTreeWidgetItem *top_item = found.value();
             QLabel *owned_count_label =
                     qobject_cast<QLabel *>(tree_widget_.itemWidget(top_item, 0));
@@ -261,10 +259,10 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                 }
 
                 for (auto &&card : item.card_item->card_id_list.value()) {
-                    auto found = sub_items.constFind(card.card_id);
-                    if (found != sub_items.constEnd()) {
-                        QTreeWidgetItem *sub_item = found.value();
-                        sub_items.erase(found);
+                    if (auto card_found = sub_items.constFind(card.card_id);
+                        card_found != sub_items.constEnd()) {
+                        QTreeWidgetItem *sub_item = card_found.value();
+                        sub_items.erase(card_found);
                         QLabel *status_label =
                                 qobject_cast<QLabel *>(tree_widget_.itemWidget(sub_item, 5));
                         status_label->setText(card.card_right.is_transfer != 0 ? u"转赠中"_s
@@ -374,8 +372,9 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
             continue;
         }
 
-        auto found = items.constFind(collect.card_item->card_asset_info->card_item->card_type_id);
-        if (found != items.constEnd()) {
+        if (auto found =
+                    items.constFind(collect.card_item->card_asset_info->card_item->card_type_id);
+            found != items.constEnd()) {
             QTreeWidgetItem *top_item = found.value();
             QLabel *owned_count_label =
                     qobject_cast<QLabel *>(tree_widget_.itemWidget(top_item, 0));
@@ -399,10 +398,10 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
 
                 for (auto &&card :
                      collect.card_item->card_asset_info->card_item->card_id_list.value()) {
-                    auto found = sub_items.find(card.card_id);
-                    if (found != sub_items.constEnd()) {
-                        QTreeWidgetItem *sub_item = found.value();
-                        sub_items.erase(found);
+                    if (auto card_found = sub_items.find(card.card_id);
+                        card_found != sub_items.constEnd()) {
+                        QTreeWidgetItem *sub_item = card_found.value();
+                        sub_items.erase(card_found);
                         QLabel *status_label =
                                 qobject_cast<QLabel *>(tree_widget_.itemWidget(sub_item, 5));
                         status_label->setText(card.card_right.is_transfer != 0 ? u"转赠中"_s

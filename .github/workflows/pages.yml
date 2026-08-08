@@ -47,15 +47,15 @@ jobs:
       - name: Generate docs
         id: build
         run: |
-          cmake -B cmake-build-release \
+          CXXFLAGS="-Wall -Wextra -pedantic -Wshadow -Wfloat-equal -Wconversion -Wshift-overflow -Wcast-qual -Wcast-align -Wno-unused-result -Wno-sign-conversion" cmake \
+                -B build \
                 -D CMAKE_BUILD_TYPE=Release \
                 -D CMAKE_WIN32_EXECUTABLE=ON \
                 -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
-                -D CMAKE_CXX_FLAGS_RELEASE="-DNDEBUG -O2 -march=nocona -msahf -mtune=generic -fcf-protection=full -fstack-protector-strong -fvisibility=hidden -fvisibility-inlines-hidden -fno-exceptions" \
                 -S .
-          cmake --build cmake-build-release
+          cmake --build build
           codebrowser_generator -p bilibilicardbrowser:`cygpath -m ${PWD}` \
-                                -b `cygpath -m ${PWD}`/cmake-build-release -a \
+                                -b `cygpath -m ${PWD}`/build -a \
                                 -o html/code
           codebrowser_indexgenerator -o html/code
           cp -r ${MSYSTEM_PREFIX}/share/woboq/data html

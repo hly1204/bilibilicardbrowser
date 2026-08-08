@@ -78,8 +78,7 @@ MyDecompose::MyDecompose(QWidget *parent, Qt::WindowFlags f)
         u"收藏集名称"_s, u"Activity ID"_s, u"卡片数量"_s, u"卡片种类数"_s, u"操作"_s,
     };
 
-    // NOLINTNEXTLINE(cppcoreguidelines-narrowing-conversions)
-    table_widget_.setColumnCount(std::size(header_list));
+    table_widget_.setColumnCount(static_cast<int>(std::size(header_list)));
     table_widget_.setHorizontalHeaderLabels(header_list);
 
     connect(&refresh_button_, &QPushButton::clicked, this, &MyDecompose::refreshRequested);
@@ -113,8 +112,7 @@ void MyDecompose::setMyDecomposeData(int scene, const MyDecomposeData &data)
     };
 
     if (table_widget_.rowCount() == 0) {
-        table_widget_.setRowCount(
-                std::size(data.list.value())); // NOLINT(cppcoreguidelines-narrowing-conversions)
+        table_widget_.setRowCount(static_cast<int>(std::size(data.list.value())));
         for (int i = 0; i < static_cast<int>(std::size(data.list.value())); ++i) {
             QLabel *act_name = new QLabel(
                     u"<a href=\"https://www.bilibili.com/h5/mall/digital-card/home?-Abrowser=live&act_id=%1&hybrid_set_header=2\">%2</a>"_s
