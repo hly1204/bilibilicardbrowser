@@ -17,7 +17,7 @@ BilibiliRequestManager::BilibiliRequestManager(QObject *parent)
       factory_(QUrl(u"https://api.bilibili.com"_s)),
       user_agent_(u"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
-                  "Chrome/150.0.0.0 "
+                  "Chrome/153.0.0.0 "
                   "Safari/537.36"_s)
 {
     // 默认构造不会配置 cookie，使用默认的 UA

@@ -324,11 +324,12 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                 }
             }
 
-            if (item.card_item->video_list_download.has_value()) {
+            if (item.card_item->video_list_download.has_value()
+                || item.card_item->video_list.has_value()) {
                 QGroupBox *group_box = new QGroupBox;
                 QHBoxLayout *layout = new QHBoxLayout(group_box);
                 layout->setContentsMargins(-1, 0, -1, 0);
-                {
+                if (item.card_item->video_list_download.has_value()) {
                     QList<QString> video_list;
                     for (auto &&video : item.card_item->video_list_download.value()) {
                         video_list << video.toString();
@@ -345,7 +346,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                         layout->addWidget(video_label);
                     }
                 }
-                {
+                if (item.card_item->video_list.has_value()) {
                     QList<QString> video_list;
                     for (auto &&video : item.card_item->video_list.value()) {
                         video_list << video.toString();
@@ -466,11 +467,13 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                 }
             }
 
-            if (collect.card_item->card_asset_info->card_item->video_list_download.has_value()) {
+            if (collect.card_item->card_asset_info->card_item->video_list_download.has_value()
+                || collect.card_item->card_asset_info->card_item->video_list.has_value()) {
                 QGroupBox *group_box = new QGroupBox;
                 QHBoxLayout *layout = new QHBoxLayout(group_box);
                 layout->setContentsMargins(-1, 0, -1, 0);
-                {
+                if (collect.card_item->card_asset_info->card_item->video_list_download
+                            .has_value()) {
                     QList<QString> video_list;
                     for (auto &&video : collect.card_item->card_asset_info->card_item
                                                 ->video_list_download.value()) {
@@ -488,7 +491,7 @@ void AssetBag::setAssetBagData(const AssetBagData &data)
                         layout->addWidget(video_label);
                     }
                 }
-                {
+                if (collect.card_item->card_asset_info->card_item->video_list.has_value()) {
                     QList<QString> video_list;
                     for (auto &&video :
                          collect.card_item->card_asset_info->card_item->video_list.value()) {

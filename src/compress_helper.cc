@@ -3,9 +3,13 @@
 #include <cstdint>
 #include <cstring>
 #include <iterator>
+#include <cstdlib>
 
 #include <brotli/decode.h>
 #include <zlib.h>
+#include <zstd.h>
+
+#include <QScopeGuard>
 
 #include "compress_helper.hh"
 
@@ -26,7 +30,7 @@ QByteArray uncompressGzip(const QByteArray &src, bool *ok)
     if (inflateInit2(&strm, MAX_WBITS | 16) != Z_OK) {
         if (ok)
             *ok = false;
-        return {};
+        return { };
     }
 
     enum { CHUNK = 16384 };
@@ -50,14 +54,14 @@ QByteArray uncompressGzip(const QByteArray &src, bool *ok)
             assert(ret != Z_STREAM_ERROR);
             switch (ret) {
             case Z_NEED_DICT:
-                [[fallthrough]];
+                Q_FALLTHROUGH();
             case Z_DATA_ERROR:
-                [[fallthrough]];
+                Q_FALLTHROUGH();
             case Z_MEM_ERROR:
                 inflateEnd(&strm);
                 if (ok)
                     *ok = false;
-                return {};
+                return { };
             default:
                 break;
             }
@@ -105,7 +109,7 @@ QByteArray uncompressBrotli(const QByteArray &src, bool *ok)
             if (ok) {
                 *ok = false;
             }
-            return {};
+            return { };
         }
     }
 
@@ -134,7 +138,7 @@ QByteArray uncompressDeflate(const QByteArray &src, bool *ok)
     if (inflateInit2(&strm, -MAX_WBITS) != Z_OK) {
         if (ok)
             *ok = false;
-        return {};
+        return { };
     }
 
     enum { CHUNK = 16384 };
@@ -158,14 +162,14 @@ QByteArray uncompressDeflate(const QByteArray &src, bool *ok)
             assert(ret != Z_STREAM_ERROR);
             switch (ret) {
             case Z_NEED_DICT:
-                [[fallthrough]];
+                Q_FALLTHROUGH();
             case Z_DATA_ERROR:
-                [[fallthrough]];
+                Q_FALLTHROUGH();
             case Z_MEM_ERROR:
                 inflateEnd(&strm);
                 if (ok)
                     *ok = false;
-                return {};
+                return { };
             default:
                 break;
             }
@@ -194,7 +198,7 @@ QByteArray uncompressZlib(const QByteArray &src, bool *ok)
     if (inflateInit2(&strm, MAX_WBITS) != Z_OK) {
         if (ok)
             *ok = false;
-        return {};
+        return { };
     }
 
     enum { CHUNK = 16384 };
@@ -218,14 +222,14 @@ QByteArray uncompressZlib(const QByteArray &src, bool *ok)
             assert(ret != Z_STREAM_ERROR);
             switch (ret) {
             case Z_NEED_DICT:
-                [[fallthrough]];
+                Q_FALLTHROUGH();
             case Z_DATA_ERROR:
-                [[fallthrough]];
+                Q_FALLTHROUGH();
             case Z_MEM_ERROR:
                 inflateEnd(&strm);
                 if (ok)
                     *ok = false;
-                return {};
+                return { };
             default:
                 break;
             }
@@ -234,6 +238,57 @@ QByteArray uncompressZlib(const QByteArray &src, bool *ok)
     }
 
     inflateEnd(&strm);
+
+    if (ok)
+        *ok = true;
+    return res;
+}
+
+QByteArray uncompressZstd(const QByteArray &src, bool *ok)
+{
+    auto err = [&ok]() -> QByteArray {
+        if (ok)
+            *ok = false;
+        return { };
+    };
+
+    /// \see https://github.com/facebook/zstd/blob/dev/examples/streaming_decompression.c
+    const size_t buf_in_size = ZSTD_DStreamInSize();
+    void *const buf_in = std::malloc(buf_in_size);
+    if (buf_in == nullptr)
+        return err();
+    QScopeGuard guard_buf_in{ [buf_in]() { std::free(buf_in); } };
+
+    const size_t buf_out_size = ZSTD_DStreamOutSize();
+    void *const buf_out = std::malloc(buf_out_size);
+    if (buf_out == nullptr)
+        return err();
+    QScopeGuard guard_buf_out{ [buf_out]() { std::free(buf_out); } };
+
+    ZSTD_DCtx *const dctx = ZSTD_createDCtx();
+    if (dctx == nullptr)
+        return err();
+    QScopeGuard guard_dctx{ [dctx]() { ZSTD_freeDCtx(dctx); } };
+
+    const int block_count = static_cast<int>((std::size(src) + buf_in_size - 1) / buf_in_size);
+
+    QByteArray res;
+
+    for (int i = 0; i < block_count; ++i) {
+        const size_t block_length = (std::min)(buf_in_size, static_cast<size_t>(std::size(src)) - i * buf_in_size);
+        std::memcpy(buf_in, src.data() + i * buf_in_size, block_length);
+
+        ZSTD_inBuffer input{ buf_in, static_cast<size_t>(block_length), 0 };
+        while (input.pos < input.size) {
+            ZSTD_outBuffer output{ buf_out, buf_out_size, 0 };
+            const size_t ret = ZSTD_decompressStream(dctx, &output, &input);
+            // 最后一个 frame 完成时会返回 0，因为我们有完整的数据，所以一定不会将 frame 分开，
+            // 此处若非零说明后面还有一部分的 frame 这是不可能发生的，直接返回错误
+            if (ZSTD_isError(ret))
+                return err();
+            res.append(reinterpret_cast<char *>(buf_out), static_cast<qsizetype>(output.pos));
+        }
+    }
 
     if (ok)
         *ok = true;

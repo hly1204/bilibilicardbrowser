@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.21)
 
-project(bilibilicardbrowser VERSION 1.2.1 LANGUAGES CXX)
+project(bilibilicardbrowser VERSION 1.2.2 LANGUAGES CXX)
 
 find_package(Qt6 REQUIRED COMPONENTS Widgets Network)
 add_subdirectory(3rdparty)
 
 find_package(ZLIB REQUIRED)
+find_package(ZSTD REQUIRED)
+set(ZSTD_LIBS zstd::libzstd_shared)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(BROTLI REQUIRED IMPORTED_TARGET libbrotlicommon libbrotlidec)
 
@@ -72,6 +74,7 @@ target_link_libraries(bilibilicardbrowser PRIVATE
     Qt6::Widgets
     Qt6::Network
     ZLIB::ZLIB
+    ${ZSTD_LIBS}
     PkgConfig::BROTLI
     nlohmann_json::nlohmann_json
 )

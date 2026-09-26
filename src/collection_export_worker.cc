@@ -127,7 +127,11 @@ void CollectionExportWorker::onAssetBagDataReceived([[maybe_unused]] int act_id,
                         string_list << act_name << item.card_item->card_name << item.scarcity()
                                     << card.card_no
                                     << (item.card_item->is_limited_card != 0 ? u"限量"_s : u"/"_s);
-                        out << string_list.join(',') << '\n';
+                        out << string_list.join(',')
+                            << u"https://www.bilibili.com/h5/mall/digital-card/home?-Abrowser=live&act_id=%1&f_source=shop&from=search&hybrid_set_header=2&lottery_id=%2&navhide=1"_s
+                                        .arg(act_id)
+                                        .arg(lottery_id)
+                            << '\n';
                     }
                 }
             }
@@ -144,8 +148,12 @@ void CollectionExportWorker::onAssetBagDataReceived([[maybe_unused]] int act_id,
                     for (auto &&card :
                          collect.card_item->card_asset_info->card_item->card_id_list.value()) {
                         QStringList string_list;
-                        string_list << act_name << collect.card_item->card_type_info->name
-                                    << u"典藏卡"_s << card.card_no << u"/"_s;
+                        string_list
+                                << act_name << collect.card_item->card_type_info->name
+                                << u"典藏卡"_s << card.card_no << u"/"_s
+                                << u"https://www.bilibili.com/h5/mall/digital-card/home?-Abrowser=live&act_id=%1&f_source=shop&from=search&hybrid_set_header=2&lottery_id=%2&navhide=1"_s
+                                           .arg(act_id)
+                                           .arg(lottery_id);
                         out << string_list.join(',') << '\n';
                     }
                 }
